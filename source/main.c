@@ -69,7 +69,7 @@ int main(void)
     CLOCK_AttachClk(BOARD_DEBUG_UART_CLK_ATTACH);
 
     BOARD_InitPins();
-    BOARD_BootClockFROHF48M();
+    BOARD_BootClockPLL180M();
     BOARD_InitDebugConsole();
     if (xTaskCreate(hello_task, "Hello_task", configMINIMAL_STACK_SIZE + 10, NULL, hello_task_PRIORITY, NULL) != pdPASS)
     {

@@ -50,7 +50,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-__attribute__(( aligned(8) ))
+__attribute__(( section(".noinit.$RAM4"), aligned(8) ))
 uint8_t gfx_buffer[480*272/2] = {0};
 
 /* Task priorities. */
@@ -95,6 +95,7 @@ int main(void)
     BOARD_InitPins();
     BOARD_BootClockPLL180M();
     BOARD_InitDebugConsole();
+    BOARD_InitSDRAM();
     BOARD_InitLCD();
 
 	lcd_test_pattern();

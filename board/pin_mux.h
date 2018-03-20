@@ -71,6 +71,7 @@ extern "C" {
 #define IOCON_PIO_MODE_PULLUP 0x20u     /*!<@brief Selects pull-up function */
 #define IOCON_PIO_OPENDRAIN_DI 0x00u  /*!<@brief Open drain is disabled */
 #define IOCON_PIO_SLEW_STANDARD 0x00u /*!<@brief Standard mode, output slew rate control is enabled */
+#define IOCON_PIO_SLEW_FAST 0x0400u   /*!<@brief Fast mode, slew rate control is disabled */
 
 #define IOCON_PIO_I2CDRIVE_HIGH 0x0400u /*!<@brief High drive: 20 mA */
 #define IOCON_PIO_I2CFILTER_EN 0x00u    /*!<@brief I2C 50 ns glitch filter enabled */

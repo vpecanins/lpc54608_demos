@@ -38,6 +38,7 @@
 #include "fsl_common.h"
 #include "fsl_debug_console.h"
 #include "fsl_emc.h"
+#include "fsl_lcdc.h"
 
 /*******************************************************************************
  * Definitions
@@ -57,6 +58,47 @@
 #define SDRAM_RAS_NCLK (2u)
 #define SDRAM_MODEREG_VALUE (0x23u)
 #define SDRAM_DEV_MEMORYMAP (0x09u) /* 128Mbits (8M*16, 4banks, 12 rows, 9 columns)*/
+
+/* LCDC parameters */
+extern uint8_t gfx_buffer[]; // Frame buffer must be allocated in another file
+
+static const lcdc_config_t lcd_config = {
+		.panelClock_Hz = 9000000,
+		.ppl = 480,
+		.hsw = 2,
+		.hfp = 8,
+		.hbp = 43,
+		.lpp = 272,
+		.vsw = 10,
+		.vfp = 4,
+		.vbp = 12,
+		.acBiasFreq = 1U,
+		.polarityFlags = kLCDC_InvertVsyncPolarity | kLCDC_InvertHsyncPolarity,
+		.enableLineEnd = false,
+		.lineEndDelay = 0U,
+		.upperPanelAddr = (const uint32_t) &gfx_buffer[0],
+		.lowerPanelAddr = 0U,
+		.bpp = kLCDC_4BPP,
+		.display = kLCDC_DisplayTFT,
+		.swapRedBlue = false,
+		.dataFormat = kLCDC_LittleEndian
+};
+
+static const lcdc_cursor_config_t lcd_cursor_config = {
+		.size = kLCDC_CursorSize32,
+		.syncMode = kLCDC_CursorAsync,
+		.palette0.red = 0U,
+		.palette0.green = 0U,
+		.palette0.blue = 0U,
+		.palette1.red = 255U,
+		.palette1.green = 255U,
+		.palette1.blue = 255U,
+
+		.image[0] = NULL,
+		.image[1] = NULL,
+		.image[2] = NULL,
+		.image[3] = NULL
+};
 
 /*******************************************************************************
  * Variables
@@ -119,4 +161,31 @@ void BOARD_InitSDRAM(void)
     EMC_Init(EMC, &basicConfig);
     /* EMC Dynamc memory configuration. */
     EMC_DynamicMemInit(EMC, &dynTiming, &dynChipConfig, 1);
+}
+
+void BOARD_InitLCD(void)
+{
+	/* Route Main clock to LCD. */
+    CLOCK_AttachClk(kMCLK_to_LCD_CLK);
+    CLOCK_SetClkDiv(kCLOCK_DivLcdClk, 1, true);   /* LCD clock divider */
+
+	LCDC_Init(LCD, &lcd_config, CLOCK_GetFreq(kCLOCK_LCD));
+
+	for (uint32_t i=0; i<128; i++) {
+		LCD->PAL[i] = 0xFFFFFFFF;
+	}
+
+	/* Setup the Cursor. */
+	//LCDC_SetCursorConfig(LCD, &lcd_cursor_config);
+	//LCDC_ChooseCursor(LCD, 0);
+
+	/* Trigger interrupt at start of every vertical back porch. */
+	/*LCDC_SetVerticalInterruptMode(LCD, kLCDC_StartOfBackPorch);
+	LCDC_EnableInterrupts(LCD, kLCDC_VerticalCompareInterrupt);
+	NVIC_EnableIRQ(LCD_IRQn);*/
+
+	//LCDC_EnableCursor(LCD, true);
+
+	LCDC_Start(LCD);
+	LCDC_PowerUp(LCD);
 }

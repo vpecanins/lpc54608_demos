@@ -42,12 +42,16 @@
 #include "fsl_device_registers.h"
 #include "fsl_debug_console.h"
 #include "board.h"
-
 #include "pin_mux.h"
+
+/* StdLib includes */
 #include <stdbool.h>
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+__attribute__(( aligned(8) ))
+uint8_t gfx_buffer[480*272/2] = {0};
 
 /* Task priorities. */
 #define hello_task_PRIORITY (configMAX_PRIORITIES - 1)
@@ -56,12 +60,32 @@
  ******************************************************************************/
 static void hello_task(void *pvParameters);
 
-/*******************************************************************************
- * Code
- ******************************************************************************/
-/*!
- * @brief Application entry point.
+/* 16-bit palette format: RGB555
+ *
+ * 15 14 13 12 11 10  9 8 7 6 5  4 3 2 1 0
+ *     B  B  B  B  B  G G G G G  R R R R R
  */
+static const uint16_t rgb555(const uint8_t r,const uint8_t g,const uint8_t b) {
+	return (b << 10) | (g << 5) | (r & 0x1F);
+}
+
+void lcd_test_pattern()
+{
+	LCD->PAL[0] = rgb555(0,0,0) | (rgb555(31,0,0) << 16);
+	LCD->PAL[1] = rgb555(0,31,0) | (rgb555(0,0,31) << 16);
+	LCD->PAL[2] = rgb555(31,31,0) | (rgb555(31,0,31) << 16);
+	LCD->PAL[3] = rgb555(0,31,31) | (rgb555(31,31,31) << 16);
+
+	LCD->PAL[4] = rgb555(15,15,15) | (rgb555(15,0,0) << 16);
+	LCD->PAL[5] = rgb555(0,15,0) | (rgb555(0,0,15) << 16);
+	LCD->PAL[6] = rgb555(15,15,0) | (rgb555(15,0,15) << 16);
+	LCD->PAL[7] = rgb555(0,15,15) | (rgb555(23,23,23) << 16);
+
+	for (uint32_t j = 0; j<272; j++)
+		for (uint32_t i = 0; i<240; i++)
+			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
+}
+
 int main(void)
 {
     /* Init board hardware. */
@@ -71,20 +95,24 @@ int main(void)
     BOARD_InitPins();
     BOARD_BootClockPLL180M();
     BOARD_InitDebugConsole();
+    BOARD_InitLCD();
+
+	lcd_test_pattern();
+
     if (xTaskCreate(hello_task, "Hello_task", configMINIMAL_STACK_SIZE + 10, NULL, hello_task_PRIORITY, NULL) != pdPASS)
     {
         PRINTF("Task creation failed!.\r\n");
-        while (1)
-            ;
+        while (1) {
+
+        }
     }
     vTaskStartScheduler();
-    for (;;)
-        ;
+
+    while (1) {
+
+    }
 }
 
-/*!
- * @brief Task responsible for printing of "Hello world." message.
- */
 static void hello_task(void *pvParameters)
 {
     for (;;)

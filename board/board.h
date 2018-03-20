@@ -223,6 +223,7 @@ extern "C" {
 
 status_t BOARD_InitDebugConsole(void);
 void BOARD_InitSDRAM(void);
+void BOARD_InitLCD(void);
 
 #if defined(__cplusplus)
 }

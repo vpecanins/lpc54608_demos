@@ -86,6 +86,69 @@ void lcd_test_pattern()
 			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
 }
 
+status_t SDRAM_DataBusCheck(volatile uint32_t *address)
+{
+    uint32_t data = 0;
+
+    /* Write the walking 1's data test. */
+    for (data = 1; data != 0; data <<= 1)
+    {
+        *address = data;
+
+        /* Read the data out of the address and check. */
+        if (*address != data)
+        {
+            return kStatus_Fail;
+        }
+    }
+    return kStatus_Success;
+}
+
+status_t SDRAM_AddressBusCheck(volatile uint32_t *address, uint32_t bytes)
+{
+    uint32_t pattern = 0x55555555;
+    uint32_t size = bytes / 4;
+    uint32_t offset;
+    uint32_t checkOffset;
+
+    /* write the pattern to the power-of-two address. */
+    for (offset = 1; offset < size; offset <<= 1)
+    {
+        address[offset] = pattern;
+    }
+    address[0] = ~pattern;
+
+    /* Read and check. */
+    for (offset = 1; offset < size; offset <<= 1)
+    {
+        if (address[offset] != pattern)
+        {
+            return kStatus_Fail;
+        }
+    }
+
+    if (address[0] != ~pattern)
+    {
+        return kStatus_Fail;
+    }
+
+    /* Change the data to the revert one address each time
+     * and check there is no effect to other address. */
+    for (offset = 1; offset < size; offset <<= 1)
+    {
+        address[offset] = ~pattern;
+        for (checkOffset = 1; checkOffset < size; checkOffset <<= 1)
+        {
+            if ((checkOffset != offset) && (address[checkOffset] != pattern))
+            {
+                return kStatus_Fail;
+            }
+        }
+        address[offset] = pattern;
+    }
+    return kStatus_Success;
+}
+
 int main(void)
 {
     /* Init board hardware. */
@@ -97,6 +160,20 @@ int main(void)
     BOARD_InitDebugConsole();
     BOARD_InitSDRAM();
     BOARD_InitLCD();
+
+    if (SDRAM_DataBusCheck(0xa0000000) != kStatus_Success)
+	{
+		PRINTF("SDRAM data bus check is failure.\r\n");
+	} else {
+		PRINTF("SDRAM data bus OK.\r\n");
+	}
+
+	if (SDRAM_AddressBusCheck(0xa0000000, (8 * 1024 * 1024)) != kStatus_Success)
+	{
+		PRINTF("SDRAM address bus check is failure.\r\n");
+	} else {
+		PRINTF("SDRAM address bus OK.\r\n");
+	}
 
 	lcd_test_pattern();
 

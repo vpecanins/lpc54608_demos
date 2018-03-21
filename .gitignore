@@ -3,3 +3,6 @@ Debug/*
 .settings
 .settings/*
 *.launch
+*.bak
+*.mex
+

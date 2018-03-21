@@ -39,6 +39,7 @@
 #include "fsl_debug_console.h"
 #include "fsl_emc.h"
 #include "fsl_lcdc.h"
+#include "fsl_spifi.h"
 
 /*******************************************************************************
  * Definitions
@@ -58,6 +59,19 @@
 #define SDRAM_RAS_NCLK (2u)
 #define SDRAM_MODEREG_VALUE (0x23u)
 #define SDRAM_DEV_MEMORYMAP (0x09u) /* 128Mbits (8M*16, 4banks, 12 rows, 9 columns)*/
+
+/* SPIFI flash parameters */
+#define SPIFI_PAGE_SIZE (256)
+#define SPIFI_SECTOR_SIZE (4096)
+#define SPIFI_BAUDRATE (12000000)
+#define SPIFI_CHANNEL 18
+#define SPIFI_CMD_NUM (6)
+#define SPIFI_CMD_READ (0)
+#define SPIFI_CMD_PROGRAM_PAGE (1)
+#define SPIFI_CMD_GET_STATUS (2)
+#define SPIFI_CMD_ERASE_SECTOR (3)
+#define SPIFI_CMD_WRITE_ENABLE (4)
+#define SPIFI_CMD_WRITE_REGISTER (5)
 
 /* LCDC parameters */
 extern uint8_t gfx_buffer[]; // Frame buffer must be allocated in another file
@@ -106,6 +120,15 @@ static const lcdc_cursor_config_t lcd_cursor_config = {
 
 /* Clock rate on the CLKIN pin */
 const uint32_t ExtClockIn = BOARD_EXTCLKINRATE;
+
+/* SPIFI commands */
+spifi_command_t spifi_command[6] = {
+		{SPIFI_PAGE_SIZE, false, kSPIFI_DataInput, 1, kSPIFI_CommandDataQuad, kSPIFI_CommandOpcodeAddrThreeBytes, 0x6B},
+		{SPIFI_PAGE_SIZE, false, kSPIFI_DataOutput, 0, kSPIFI_CommandOpcodeSerial, kSPIFI_CommandOpcodeAddrThreeBytes, 0x38},
+		{4, false, kSPIFI_DataInput, 0, kSPIFI_CommandAllSerial, kSPIFI_CommandOpcodeOnly, 0x05},
+		{0, false, kSPIFI_DataOutput, 0, kSPIFI_CommandAllSerial, kSPIFI_CommandOpcodeAddrThreeBytes, 0x20},
+		{0, false, kSPIFI_DataOutput, 0, kSPIFI_CommandAllSerial, kSPIFI_CommandOpcodeOnly, 0x06},
+		{4, false, kSPIFI_DataOutput, 0, kSPIFI_CommandAllSerial, kSPIFI_CommandOpcodeOnly, 0x01}};
 
 /*******************************************************************************
  * Code
@@ -188,4 +211,54 @@ void BOARD_InitLCD(void)
 
 	LCDC_Start(LCD);
 	LCDC_PowerUp(LCD);
+}
+
+static void check_if_finish()
+{
+    uint32_t val = 0;
+    /* Check WIP bit */
+    do
+    {
+        SPIFI_SetCommand(SPIFI0, &spifi_command[SPIFI_CMD_GET_STATUS]);
+        while ((SPIFI0->STAT & SPIFI_STAT_INTRQ_MASK) == 0U)
+        {
+        }
+        val = SPIFI_ReadData(SPIFI0);
+    } while (val & 0x1);
+}
+
+static void enable_quad_mode()
+{
+    /* Write enable */
+    SPIFI_SetCommand(SPIFI0, &spifi_command[SPIFI_CMD_WRITE_ENABLE]);
+
+    /* Set write register command */
+    SPIFI_SetCommand(SPIFI0, &spifi_command[SPIFI_CMD_WRITE_REGISTER]);
+
+    SPIFI_WriteData(SPIFI0, 0x40);
+
+    check_if_finish();
+}
+
+void BOARD_InitSPIFI(void)
+{
+	spifi_config_t config = {0};
+
+	CLOCK_AttachClk(kMAIN_CLK_to_SPIFI_CLK);
+
+    uint32_t sourceClockFreq = CLOCK_GetSpifiClkFreq();
+	CLOCK_SetClkDiv(kCLOCK_DivSpifiClk, sourceClockFreq / SPIFI_BAUDRATE - 1U, false);
+
+	/* Initialize SPIFI */
+	SPIFI_GetDefaultConfig(&config);
+	SPIFI_Init(SPIFI0, &config);
+
+	/* Enable Quad mode */
+	enable_quad_mode();
+
+	/* Reset to memory command mode */
+	SPIFI_ResetCommand(SPIFI0);
+
+	/* Setup memory command */
+	SPIFI_SetMemoryCommand(SPIFI0, &spifi_command[SPIFI_CMD_READ]);
 }

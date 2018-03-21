@@ -53,6 +53,9 @@
 __attribute__(( section(".noinit.$RAM4"), aligned(8) ))
 uint8_t gfx_buffer[480*272/2] = {0};
 
+__attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
+uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
+
 /* Task priorities. */
 #define hello_task_PRIORITY (configMAX_PRIORITIES - 1)
 /*******************************************************************************
@@ -159,6 +162,7 @@ int main(void)
     BOARD_BootClockPLL180M();
     BOARD_InitDebugConsole();
     BOARD_InitSDRAM();
+    BOARD_InitSPIFI();
     BOARD_InitLCD();
 
     if (SDRAM_DataBusCheck(0xa0000000) != kStatus_Success)
@@ -196,6 +200,9 @@ static void hello_task(void *pvParameters)
     for (;;)
     {
         PRINTF("Hello world.\r\n");
+        for (uint32_t i=0; i<8; i++) {
+        	PRINTF("%c", spifi_test[i]);
+        }
         vTaskSuspend(NULL);
     }
 }

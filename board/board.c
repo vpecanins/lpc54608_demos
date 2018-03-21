@@ -36,7 +36,6 @@
 #include <stdint.h>
 #include "clock_config.h"
 #include "fsl_common.h"
-#include "fsl_debug_console.h"
 #include "fsl_emc.h"
 #include "fsl_lcdc.h"
 #include "fsl_spifi.h"
@@ -118,9 +117,6 @@ static const lcdc_cursor_config_t lcd_cursor_config = {
  * Variables
  ******************************************************************************/
 
-/* Clock rate on the CLKIN pin */
-const uint32_t ExtClockIn = BOARD_EXTCLKINRATE;
-
 /* SPIFI commands */
 spifi_command_t spifi_command[6] = {
 		{SPIFI_PAGE_SIZE, false, kSPIFI_DataInput, 1, kSPIFI_CommandDataQuad, kSPIFI_CommandOpcodeAddrThreeBytes, 0x6B},
@@ -133,16 +129,6 @@ spifi_command_t spifi_command[6] = {
 /*******************************************************************************
  * Code
  ******************************************************************************/
-/* Initialize debug console. */
-status_t BOARD_InitDebugConsole(void)
-{
-    status_t result;
-    RESET_PeripheralReset(BOARD_DEBUG_UART_RST);
-    result = DbgConsole_Init(BOARD_DEBUG_UART_BASEADDR, BOARD_DEBUG_UART_BAUDRATE, DEBUG_CONSOLE_DEVICE_TYPE_FLEXCOMM,
-                             BOARD_DEBUG_UART_CLK_FREQ);
-    assert(kStatus_Success == result);
-    return result;
-}
 
 /* Initialize the external memory. */
 void BOARD_InitSDRAM(void)

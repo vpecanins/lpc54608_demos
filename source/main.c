@@ -40,7 +40,6 @@
 
 /* Freescale includes. */
 #include "fsl_device_registers.h"
-#include "fsl_debug_console.h"
 #include "board.h"
 #include "pin_mux.h"
 
@@ -58,6 +57,7 @@ uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
 
 /* Task priorities. */
 #define hello_task_PRIORITY (configMAX_PRIORITIES - 1)
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -155,35 +155,32 @@ status_t SDRAM_AddressBusCheck(volatile uint32_t *address, uint32_t bytes)
 int main(void)
 {
     /* Init board hardware. */
-    /* attach 12 MHz clock to FLEXCOMM0 (debug console) */
-    CLOCK_AttachClk(BOARD_DEBUG_UART_CLK_ATTACH);
 
     BOARD_InitPins();
     BOARD_BootClockPLL180M();
-    BOARD_InitDebugConsole();
     BOARD_InitSDRAM();
     BOARD_InitSPIFI();
     BOARD_InitLCD();
 
     if (SDRAM_DataBusCheck(0xa0000000) != kStatus_Success)
 	{
-		PRINTF("SDRAM data bus check is failure.\r\n");
+		printf("SDRAM data bus check is failure.\r\n");
 	} else {
-		PRINTF("SDRAM data bus OK.\r\n");
+		printf("SDRAM data bus OK.\r\n");
 	}
 
 	if (SDRAM_AddressBusCheck(0xa0000000, (8 * 1024 * 1024)) != kStatus_Success)
 	{
-		PRINTF("SDRAM address bus check is failure.\r\n");
+		printf("SDRAM address bus check is failure.\r\n");
 	} else {
-		PRINTF("SDRAM address bus OK.\r\n");
+		printf("SDRAM address bus OK.\r\n");
 	}
 
 	lcd_test_pattern();
 
-    if (xTaskCreate(hello_task, "Hello_task", configMINIMAL_STACK_SIZE + 10, NULL, hello_task_PRIORITY, NULL) != pdPASS)
+    if (xTaskCreate(hello_task, "Hello_task", configMINIMAL_STACK_SIZE + 50, NULL, hello_task_PRIORITY, NULL) != pdPASS)
     {
-        PRINTF("Task creation failed!.\r\n");
+        printf("Task creation failed!.\r\n");
         while (1) {
 
         }
@@ -199,10 +196,12 @@ static void hello_task(void *pvParameters)
 {
     for (;;)
     {
-        PRINTF("Hello world.\r\n");
+        printf("Hello world.\r\n");
         for (uint32_t i=0; i<8; i++) {
-        	PRINTF("%c", spifi_test[i]);
+        	printf("%c", spifi_test[i]);
         }
-        vTaskSuspend(NULL);
+        printf("\r\n");
+        vTaskDelay(1000);
     }
+    vTaskSuspend(NULL);
 }

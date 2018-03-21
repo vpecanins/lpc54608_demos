@@ -178,9 +178,9 @@ BOARD_InitPins:
     glitch_filter: disabled, slew_rate: standard, open_drain: disabled}
   - {pin_num: M9, peripheral: SPIFI0, signal: 'SPIFI_IO, 2', pin_signal: PIO0_28/FC0_SCK/CTIMER2_CAP3/SCT0_OUT7/TRACEDATA(3)/SPIFI_IO(2)/USB0_OVERCURRENTN, mode: pullUp,
     invert: disabled, glitch_filter: disabled, slew_rate: standard, open_drain: disabled}
-  - {pin_num: C3, peripheral: GPIO, signal: 'PIO2, 2', pin_signal: PIO2_2/ENET_CRS/FC3_SSEL3/SCT0_OUT6/CTIMER1_MAT1}
-  - {pin_num: A13, peripheral: GPIO, signal: 'PIO3, 3', pin_signal: PIO3_3/LCD_VD(17)/FC9_TXD_SCL_MISO}
-  - {pin_num: E3, peripheral: GPIO, signal: 'PIO3, 14', pin_signal: PIO3_14/SCT0_OUT4/FC9_RTS_SCL_SSEL1/CTIMER3_MAT1/TRACEDATA(2)}
+  - {pin_num: A13, peripheral: GPIO, signal: 'PIO3, 3', pin_signal: PIO3_3/LCD_VD(17)/FC9_TXD_SCL_MISO, direction: OUTPUT, mode: inactive}
+  - {pin_num: E3, peripheral: GPIO, signal: 'PIO3, 14', pin_signal: PIO3_14/SCT0_OUT4/FC9_RTS_SCL_SSEL1/CTIMER3_MAT1/TRACEDATA(2), direction: OUTPUT, mode: inactive}
+  - {pin_num: C3, peripheral: GPIO, signal: 'PIO2, 2', pin_signal: PIO2_2/ENET_CRS/FC3_SSEL3/SCT0_OUT6/CTIMER1_MAT1, direction: OUTPUT, mode: inactive}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -1077,10 +1077,14 @@ void BOARD_InitPins(void)
 
     IOCON->PIO[2][2] = ((IOCON->PIO[2][2] &
                          /* Mask bits to zero which are setting */
-                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_DIGIMODE_MASK)))
+                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK)))
 
                         /* Selects pin function.: PORT22 (pin C3) is configured as PIO2_2 */
                         | IOCON_PIO_FUNC(PIO22_FUNC_ALT0)
+
+                        /* Selects function mode (on-chip pull-up/pull-down resistor control).: Inactive. Inactive (no
+                         * pull-down/pull-up resistor enabled). */
+                        | IOCON_PIO_MODE(PIO22_MODE_INACTIVE)
 
                         /* Select Analog/Digital mode.: Digital mode. */
                         | IOCON_PIO_DIGIMODE(PIO22_DIGIMODE_DIGITAL));
@@ -1291,10 +1295,14 @@ void BOARD_InitPins(void)
 
     IOCON->PIO[3][14] = ((IOCON->PIO[3][14] &
                           /* Mask bits to zero which are setting */
-                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_DIGIMODE_MASK)))
+                          (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK)))
 
                          /* Selects pin function.: PORT314 (pin E3) is configured as PIO3_14 */
                          | IOCON_PIO_FUNC(PIO314_FUNC_ALT0)
+
+                         /* Selects function mode (on-chip pull-up/pull-down resistor control).: Inactive. Inactive (no
+                          * pull-down/pull-up resistor enabled). */
+                         | IOCON_PIO_MODE(PIO314_MODE_INACTIVE)
 
                          /* Select Analog/Digital mode.: Digital mode. */
                          | IOCON_PIO_DIGIMODE(PIO314_DIGIMODE_DIGITAL));
@@ -1318,10 +1326,14 @@ void BOARD_InitPins(void)
 
     IOCON->PIO[3][3] = ((IOCON->PIO[3][3] &
                          /* Mask bits to zero which are setting */
-                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_DIGIMODE_MASK)))
+                         (~(IOCON_PIO_FUNC_MASK | IOCON_PIO_MODE_MASK | IOCON_PIO_DIGIMODE_MASK)))
 
                         /* Selects pin function.: PORT33 (pin A13) is configured as PIO3_3 */
                         | IOCON_PIO_FUNC(PIO33_FUNC_ALT0)
+
+                        /* Selects function mode (on-chip pull-up/pull-down resistor control).: Inactive. Inactive (no
+                         * pull-down/pull-up resistor enabled). */
+                        | IOCON_PIO_MODE(PIO33_MODE_INACTIVE)
 
                         /* Select Analog/Digital mode.: Digital mode. */
                         | IOCON_PIO_DIGIMODE(PIO33_DIGIMODE_DIGITAL));

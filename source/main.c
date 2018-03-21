@@ -162,6 +162,11 @@ int main(void)
     BOARD_InitSPIFI();
     BOARD_InitLCD();
 
+	CLOCK_EnableClock(kCLOCK_Gpio0);
+	CLOCK_EnableClock(kCLOCK_Gpio1);
+	CLOCK_EnableClock(kCLOCK_Gpio2);
+	CLOCK_EnableClock(kCLOCK_Gpio3);
+
     if (SDRAM_DataBusCheck(0xa0000000) != kStatus_Success)
 	{
 		printf("SDRAM data bus check is failure.\r\n");
@@ -194,14 +199,35 @@ int main(void)
 
 static void hello_task(void *pvParameters)
 {
-    for (;;)
+	printf("Hello world.\r\n");
+	for (uint32_t i=0; i<8; i++) {
+		printf("%c", spifi_test[i]);
+	}
+	printf("\r\n");
+
+	static const gpio_pin_config_t pin_config = {
+	        kGPIO_DigitalOutput, 0,
+	    };
+
+	GPIO_PinInit(GPIO, 2, 2, &pin_config);
+	GPIO_PinInit(GPIO, 3, 3, &pin_config);
+	GPIO_PinInit(GPIO, 3, 14, &pin_config);
+
+	GPIO_PinWrite(GPIO, 2, 2, 1);
+	GPIO_PinWrite(GPIO, 3, 3, 1);
+	GPIO_PinWrite(GPIO, 3, 14, 1);
+
+    while (1)
     {
-        printf("Hello world.\r\n");
-        for (uint32_t i=0; i<8; i++) {
-        	printf("%c", spifi_test[i]);
-        }
-        printf("\r\n");
-        vTaskDelay(1000);
+    	GPIO_PinWrite(GPIO, 3, 14, 1);
+        GPIO_PinWrite(GPIO, 2, 2, 0);
+        vTaskDelay(30);
+        GPIO_PinWrite(GPIO, 2, 2, 1);
+        GPIO_PinWrite(GPIO, 3, 3, 0);
+		vTaskDelay(30);
+		GPIO_PinWrite(GPIO, 3, 3, 1);
+		GPIO_PinWrite(GPIO, 3, 14, 0);
+		vTaskDelay(30);
     }
     vTaskSuspend(NULL);
 }

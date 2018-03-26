@@ -42,6 +42,7 @@
 #include "fsl_device_registers.h"
 #include "board.h"
 #include "pin_mux.h"
+#include "hw_self_test.h"
 
 /* StdLib includes */
 #include <stdbool.h>
@@ -55,102 +56,10 @@ uint8_t gfx_buffer[480*272/2] = {0};
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
 uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
 
-/* Task priorities. */
-#define hello_task_PRIORITY (configMAX_PRIORITIES - 1)
-
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
 static void hello_task(void *pvParameters);
-
-/* 16-bit palette format: RGB555
- *
- * 15 14 13 12 11 10  9 8 7 6 5  4 3 2 1 0
- *     B  B  B  B  B  G G G G G  R R R R R
- */
-static const uint16_t rgb555(const uint8_t r,const uint8_t g,const uint8_t b) {
-	return (b << 10) | (g << 5) | (r & 0x1F);
-}
-
-void lcd_test_pattern()
-{
-	LCD->PAL[0] = rgb555(0,0,0) | (rgb555(31,0,0) << 16);
-	LCD->PAL[1] = rgb555(0,31,0) | (rgb555(0,0,31) << 16);
-	LCD->PAL[2] = rgb555(31,31,0) | (rgb555(31,0,31) << 16);
-	LCD->PAL[3] = rgb555(0,31,31) | (rgb555(31,31,31) << 16);
-
-	LCD->PAL[4] = rgb555(15,15,15) | (rgb555(15,0,0) << 16);
-	LCD->PAL[5] = rgb555(0,15,0) | (rgb555(0,0,15) << 16);
-	LCD->PAL[6] = rgb555(15,15,0) | (rgb555(15,0,15) << 16);
-	LCD->PAL[7] = rgb555(0,15,15) | (rgb555(23,23,23) << 16);
-
-	for (uint32_t j = 0; j<272; j++)
-		for (uint32_t i = 0; i<240; i++)
-			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
-}
-
-status_t SDRAM_DataBusCheck(volatile uint32_t *address)
-{
-    uint32_t data = 0;
-
-    /* Write the walking 1's data test. */
-    for (data = 1; data != 0; data <<= 1)
-    {
-        *address = data;
-
-        /* Read the data out of the address and check. */
-        if (*address != data)
-        {
-            return kStatus_Fail;
-        }
-    }
-    return kStatus_Success;
-}
-
-status_t SDRAM_AddressBusCheck(volatile uint32_t *address, uint32_t bytes)
-{
-    uint32_t pattern = 0x55555555;
-    uint32_t size = bytes / 4;
-    uint32_t offset;
-    uint32_t checkOffset;
-
-    /* write the pattern to the power-of-two address. */
-    for (offset = 1; offset < size; offset <<= 1)
-    {
-        address[offset] = pattern;
-    }
-    address[0] = ~pattern;
-
-    /* Read and check. */
-    for (offset = 1; offset < size; offset <<= 1)
-    {
-        if (address[offset] != pattern)
-        {
-            return kStatus_Fail;
-        }
-    }
-
-    if (address[0] != ~pattern)
-    {
-        return kStatus_Fail;
-    }
-
-    /* Change the data to the revert one address each time
-     * and check there is no effect to other address. */
-    for (offset = 1; offset < size; offset <<= 1)
-    {
-        address[offset] = ~pattern;
-        for (checkOffset = 1; checkOffset < size; checkOffset <<= 1)
-        {
-            if ((checkOffset != offset) && (address[checkOffset] != pattern))
-            {
-                return kStatus_Fail;
-            }
-        }
-        address[offset] = pattern;
-    }
-    return kStatus_Success;
-}
 
 int main(void)
 {
@@ -167,29 +76,18 @@ int main(void)
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 
-    if (SDRAM_DataBusCheck(0xa0000000) != kStatus_Success)
-	{
-		printf("SDRAM data bus check is failure.\r\n");
-	} else {
-		printf("SDRAM data bus OK.\r\n");
-	}
+    TEST_SDRAM();
+    TEST_SPIFI();
+    TEST_LCD();
 
-	if (SDRAM_AddressBusCheck(0xa0000000, (8 * 1024 * 1024)) != kStatus_Success)
-	{
-		printf("SDRAM address bus check is failure.\r\n");
-	} else {
-		printf("SDRAM address bus OK.\r\n");
-	}
-
-	lcd_test_pattern();
-
-    if (xTaskCreate(hello_task, "Hello_task", configMINIMAL_STACK_SIZE + 50, NULL, hello_task_PRIORITY, NULL) != pdPASS)
+    if (xTaskCreate(hello_task, "Hello_task", 150, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
     {
         printf("Task creation failed!.\r\n");
         while (1) {
 
         }
     }
+
     vTaskStartScheduler();
 
     while (1) {
@@ -205,29 +103,7 @@ static void hello_task(void *pvParameters)
 	}
 	printf("\r\n");
 
-	static const gpio_pin_config_t pin_config = {
-	        kGPIO_DigitalOutput, 0,
-	    };
+	TEST_LEDS();
 
-	GPIO_PinInit(GPIO, 2, 2, &pin_config);
-	GPIO_PinInit(GPIO, 3, 3, &pin_config);
-	GPIO_PinInit(GPIO, 3, 14, &pin_config);
-
-	GPIO_PinWrite(GPIO, 2, 2, 1);
-	GPIO_PinWrite(GPIO, 3, 3, 1);
-	GPIO_PinWrite(GPIO, 3, 14, 1);
-
-    while (1)
-    {
-    	GPIO_PinWrite(GPIO, 3, 14, 1);
-        GPIO_PinWrite(GPIO, 2, 2, 0);
-        vTaskDelay(30);
-        GPIO_PinWrite(GPIO, 2, 2, 1);
-        GPIO_PinWrite(GPIO, 3, 3, 0);
-		vTaskDelay(30);
-		GPIO_PinWrite(GPIO, 3, 3, 1);
-		GPIO_PinWrite(GPIO, 3, 14, 0);
-		vTaskDelay(30);
-    }
     vTaskSuspend(NULL);
 }

@@ -60,6 +60,7 @@ uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
  * Prototypes
  ******************************************************************************/
 static void hello_task(void *pvParameters);
+static void cursor_task(void *pvParameters);
 
 int main(void)
 {
@@ -70,6 +71,7 @@ int main(void)
     BOARD_InitSDRAM();
     BOARD_InitSPIFI();
     BOARD_InitLCD();
+    BOARD_InitTouchPanel();
 
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	CLOCK_EnableClock(kCLOCK_Gpio1);
@@ -88,6 +90,14 @@ int main(void)
         }
     }
 
+    if (xTaskCreate(cursor_task, "Cursor_task", 150, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
+   {
+	   printf("Task creation failed!.\r\n");
+	   while (1) {
+
+	   }
+   }
+
     vTaskStartScheduler();
 
     while (1) {
@@ -104,6 +114,13 @@ static void hello_task(void *pvParameters)
 	printf("\r\n");
 
 	TEST_LEDS();
+
+    vTaskSuspend(NULL);
+}
+
+static void cursor_task(void *pvParameters)
+{
+	TEST_TouchCursor();
 
     vTaskSuspend(NULL);
 }

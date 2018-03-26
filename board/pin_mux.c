@@ -181,6 +181,10 @@ BOARD_InitPins:
   - {pin_num: A13, peripheral: GPIO, signal: 'PIO3, 3', pin_signal: PIO3_3/LCD_VD(17)/FC9_TXD_SCL_MISO, direction: OUTPUT, mode: inactive}
   - {pin_num: E3, peripheral: GPIO, signal: 'PIO3, 14', pin_signal: PIO3_14/SCT0_OUT4/FC9_RTS_SCL_SSEL1/CTIMER3_MAT1/TRACEDATA(2), direction: OUTPUT, mode: inactive}
   - {pin_num: C3, peripheral: GPIO, signal: 'PIO2, 2', pin_signal: PIO2_2/ENET_CRS/FC3_SSEL3/SCT0_OUT6/CTIMER1_MAT1, direction: OUTPUT, mode: inactive}
+  - {pin_num: C2, peripheral: FLEXCOMM2, signal: CTS_SDA_SSEL0, pin_signal: PIO3_23/FC2_CTS_SDA_SSEL0/UTICK_CAP3, invert: disabled, glitch_filter: disabled, i2c_slew: i2c,
+    i2c_drive: high, i2c_filter: enabled}
+  - {pin_num: E2, peripheral: FLEXCOMM2, signal: RTS_SCL_SSEL1, pin_signal: PIO3_24/FC2_RTS_SCL_SSEL1/CTIMER4_CAP0/USB0_VBUS, invert: disabled, glitch_filter: disabled,
+    i2c_slew: i2c, i2c_drive: high, i2c_filter: enabled}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -1306,6 +1310,40 @@ void BOARD_InitPins(void)
 
                          /* Select Analog/Digital mode.: Digital mode. */
                          | IOCON_PIO_DIGIMODE(PIO314_DIGIMODE_DIGITAL));
+
+    const uint32_t port3_pin23_config = (/* Pin is configured as FC2_CTS_SDA_SSEL0 */
+                                         IOCON_PIO_FUNC1 |
+                                         /* I2C mode */
+                                         IOCON_PIO_I2CSLEW_I2C |
+                                         /* Input function is not inverted */
+                                         IOCON_PIO_INV_DI |
+                                         /* Enables digital function */
+                                         IOCON_PIO_DIGITAL_EN |
+                                         /* Input filter disabled */
+                                         IOCON_PIO_INPFILT_OFF |
+                                         /* High drive: 20 mA */
+                                         IOCON_PIO_I2CDRIVE_HIGH |
+                                         /* I2C 50 ns glitch filter enabled */
+                                         IOCON_PIO_I2CFILTER_EN);
+    /* PORT3 PIN23 (coords: C2) is configured as FC2_CTS_SDA_SSEL0 */
+    IOCON_PinMuxSet(IOCON, 3U, 23U, port3_pin23_config);
+
+    const uint32_t port3_pin24_config = (/* Pin is configured as FC2_RTS_SCL_SSEL1 */
+                                         IOCON_PIO_FUNC1 |
+                                         /* I2C mode */
+                                         IOCON_PIO_I2CSLEW_I2C |
+                                         /* Input function is not inverted */
+                                         IOCON_PIO_INV_DI |
+                                         /* Enables digital function */
+                                         IOCON_PIO_DIGITAL_EN |
+                                         /* Input filter disabled */
+                                         IOCON_PIO_INPFILT_OFF |
+                                         /* High drive: 20 mA */
+                                         IOCON_PIO_I2CDRIVE_HIGH |
+                                         /* I2C 50 ns glitch filter enabled */
+                                         IOCON_PIO_I2CFILTER_EN);
+    /* PORT3 PIN24 (coords: E2) is configured as FC2_RTS_SCL_SSEL1 */
+    IOCON_PinMuxSet(IOCON, 3U, 24U, port3_pin24_config);
 
     const uint32_t port3_pin25_config = (/* Pin is configured as EMC_A(14) */
                                          IOCON_PIO_FUNC6 |

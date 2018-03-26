@@ -58,6 +58,7 @@ status_t BOARD_InitDebugConsole(void);
 void BOARD_InitSDRAM(void);
 void BOARD_InitLCD(void);
 void BOARD_InitSPIFI(void);
+void BOARD_InitTouchPanel(void);
 
 #if defined(__cplusplus)
 }

@@ -39,6 +39,7 @@
 #include "fsl_emc.h"
 #include "fsl_lcdc.h"
 #include "fsl_spifi.h"
+#include "fsl_ft5406.h"
 
 /*******************************************************************************
  * Definitions
@@ -97,6 +98,8 @@ static const lcdc_config_t lcd_config = {
 		.dataFormat = kLCDC_LittleEndian
 };
 
+extern const uint8_t lcd_cursor[];
+
 static const lcdc_cursor_config_t lcd_cursor_config = {
 		.size = kLCDC_CursorSize32,
 		.syncMode = kLCDC_CursorAsync,
@@ -107,7 +110,7 @@ static const lcdc_cursor_config_t lcd_cursor_config = {
 		.palette1.green = 255U,
 		.palette1.blue = 255U,
 
-		.image[0] = NULL,
+		.image[0] = &lcd_cursor,
 		.image[1] = NULL,
 		.image[2] = NULL,
 		.image[3] = NULL
@@ -185,15 +188,17 @@ void BOARD_InitLCD(void)
 	}
 
 	/* Setup the Cursor. */
-	//LCDC_SetCursorConfig(LCD, &lcd_cursor_config);
-	//LCDC_ChooseCursor(LCD, 0);
+	LCDC_SetCursorConfig(LCD, &lcd_cursor_config);
+	LCDC_ChooseCursor(LCD, 0);
+	LCDC_EnableCursor(LCD, true);
+	LCDC_SetCursorPosition(LCD, lcd_config.ppl/2, lcd_config.lpp/2);
 
 	/* Trigger interrupt at start of every vertical back porch. */
 	/*LCDC_SetVerticalInterruptMode(LCD, kLCDC_StartOfBackPorch);
 	LCDC_EnableInterrupts(LCD, kLCDC_VerticalCompareInterrupt);
 	NVIC_EnableIRQ(LCD_IRQn);*/
 
-	//LCDC_EnableCursor(LCD, true);
+
 
 	LCDC_Start(LCD);
 	LCDC_PowerUp(LCD);
@@ -247,4 +252,36 @@ void BOARD_InitSPIFI(void)
 
 	/* Setup memory command */
 	SPIFI_SetMemoryCommand(SPIFI0, &spifi_command[SPIFI_CMD_READ]);
+}
+
+void BOARD_InitTouchPanel(void)
+{
+	/* attach 12 MHz clock to FLEXCOMM2 (I2C touch ctl) */
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
+
+	// Initialize Touch panel I2C interface
+	i2c_master_config_t masterConfig;
+
+	I2C_MasterGetDefaultConfig(&masterConfig);
+
+	/* Change the default baudrate configuration */
+	masterConfig.baudRate_Bps = 100000U;
+
+	/* Initialize the I2C master peripheral */
+	I2C_MasterInit(((I2C_Type *) (I2C2_BASE)), &masterConfig, 12000000);
+
+	// Touch panel RSTn pin
+	gpio_pin_config_t pin_config = {kGPIO_DigitalOutput, 0};
+
+	GPIO_PinInit(GPIO, 2, 27, &pin_config);
+
+	uint32_t i=0;
+	GPIO_WritePinOutput(GPIO, 2, 27, 1);
+	while (i < 1000U) i++;
+	i=0;
+	GPIO_WritePinOutput(GPIO, 2, 27, 0);
+	while (i < 1000U) i++;
+	i=0;
+	GPIO_WritePinOutput(GPIO, 2, 27, 1);
+	while (i < 1000U) i++;
 }

@@ -50,6 +50,15 @@ void BOARD_InitBootPins(void);
  * @brief Selects pin function 6 */
 #define IOCON_PIO_FUNC6 0x06u
 /*!
+ * @brief High drive: 20 mA */
+#define IOCON_PIO_I2CDRIVE_HIGH 0x0400u
+/*!
+ * @brief I2C 50 ns glitch filter enabled */
+#define IOCON_PIO_I2CFILTER_EN 0x00u
+/*!
+ * @brief I2C mode */
+#define IOCON_PIO_I2CSLEW_I2C 0x00u
+/*!
  * @brief Input filter disabled */
 #define IOCON_PIO_INPFILT_OFF 0x0200u
 /*!
@@ -823,6 +832,44 @@ void BOARD_InitBootPins(void);
 #define BOARD_INITPINS_LED3_NAME "LED3"                              /*!<@brief Identifier name */
 #define BOARD_INITPINS_LED3_DIRECTION kPIN_MUX_DirectionOutput       /*!<@brief Direction */
                                                                      /* @} */
+
+/*! @name FC2_CTS_SDA_SSEL0 (coord C2), J11[10]/J9[3]/U10[3]/J17[5]/U19[10]/P3_23-FC2_SDAX
+  @{ */
+/*!
+ * @brief Device name: FLEXCOMM2 */
+#define BOARD_INITPINS_FC2_SDAX_PERIPHERAL FLEXCOMM2
+/*!
+ * @brief FLEXCOMM2 signal: CTS_SDA_SSEL0 */
+#define BOARD_INITPINS_FC2_SDAX_SIGNAL CTS_SDA_SSEL0
+/*!
+ * @brief Pin name */
+#define BOARD_INITPINS_FC2_SDAX_PIN_NAME FC2_CTS_SDA_SSEL0
+/*!
+ * @brief Label */
+#define BOARD_INITPINS_FC2_SDAX_LABEL "J11[10]/J9[3]/U10[3]/J17[5]/U19[10]/P3_23-FC2_SDAX"
+/*!
+ * @brief Identifier name */
+#define BOARD_INITPINS_FC2_SDAX_NAME "FC2_SDAX"
+/* @} */
+
+/*! @name FC2_RTS_SCL_SSEL1 (coord E2), J11[9]/J9[1]/U10[2]/J17[4]/U19[2]/P3_24-FC2_SCLX
+  @{ */
+/*!
+ * @brief Device name: FLEXCOMM2 */
+#define BOARD_INITPINS_FC2_SCLX_PERIPHERAL FLEXCOMM2
+/*!
+ * @brief FLEXCOMM2 signal: RTS_SCL_SSEL1 */
+#define BOARD_INITPINS_FC2_SCLX_SIGNAL RTS_SCL_SSEL1
+/*!
+ * @brief Pin name */
+#define BOARD_INITPINS_FC2_SCLX_PIN_NAME FC2_RTS_SCL_SSEL1
+/*!
+ * @brief Label */
+#define BOARD_INITPINS_FC2_SCLX_LABEL "J11[9]/J9[1]/U10[2]/J17[4]/U19[2]/P3_24-FC2_SCLX"
+/*!
+ * @brief Identifier name */
+#define BOARD_INITPINS_FC2_SCLX_NAME "FC2_SCLX"
+/* @} */
 
 /*!
  * @brief Configures pin routing and optionally pin electrical features.

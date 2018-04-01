@@ -37,6 +37,7 @@
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
+#include "event_groups.h"
 
 /* Freescale includes. */
 #include "fsl_device_registers.h"
@@ -50,18 +51,28 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-__attribute__(( section(".noinit.$RAM4"), aligned(8) ))
-uint8_t gfx_buffer[480*272/2] = {0};
-
-__attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
-uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
 
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
 static void hello_task(void *pvParameters);
 static void cursor_task(void *pvParameters);
+extern void audio_task(void *pvParameters);
 
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+__attribute__(( section(".noinit.$RAM4"), aligned(8) ))
+uint8_t gfx_buffer[480*272/2] = {0};
+
+__attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
+uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
+
+extern EventGroupHandle_t rx_full_event;
+
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
 int main(void)
 {
     /* Init board hardware. */
@@ -72,31 +83,44 @@ int main(void)
     BOARD_InitSPIFI();
     BOARD_InitLCD();
     BOARD_InitTouchPanel();
+    BOARD_InitDMIC();
 
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 
+	DMA_Init(DMA0);
+
+	rx_full_event = xEventGroupCreate();
+
     TEST_SDRAM();
     TEST_SPIFI();
     TEST_LCD();
 
-    if (xTaskCreate(hello_task, "Hello_task", 150, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
+    if (xTaskCreate(hello_task, "Hello_task", 200, NULL, (configMAX_PRIORITIES - 3), NULL) != pdPASS)
     {
-        printf("Task creation failed!.\r\n");
-        while (1) {
+    	printf("Task creation failed!.\r\n");
+    	while (1) {
 
-        }
+    	}
     }
 
-    if (xTaskCreate(cursor_task, "Cursor_task", 150, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
-   {
-	   printf("Task creation failed!.\r\n");
-	   while (1) {
+    if (xTaskCreate(cursor_task, "Cursor_task", 150, NULL, (configMAX_PRIORITIES - 3), NULL) != pdPASS)
+    {
+    	printf("Task creation failed!.\r\n");
+    	while (1) {
 
-	   }
-   }
+    	}
+    }
+
+    if (xTaskCreate(audio_task, "Audio_task", 200, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
+    {
+    	printf("Task creation failed!.\r\n");
+    	while (1) {
+
+    	}
+    }
 
     vTaskStartScheduler();
 

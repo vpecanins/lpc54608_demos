@@ -40,6 +40,7 @@
 #include "fsl_lcdc.h"
 #include "fsl_spifi.h"
 #include "fsl_ft5406.h"
+#include "fsl_dmic.h"
 
 /*******************************************************************************
  * Definitions
@@ -284,4 +285,36 @@ void BOARD_InitTouchPanel(void)
 	i=0;
 	GPIO_WritePinOutput(GPIO, 2, 27, 1);
 	while (i < 1000U) i++;
+}
+
+void BOARD_InitDMIC(void)
+{
+	dmic_channel_config_t dmic_channel_cfg = {
+			.divhfclk = kDMIC_PdmDiv1,
+			.osr = 25U,
+			.gainshft = 2U,
+			.preac2coef = kDMIC_CompValueZero,
+			.preac4coef = kDMIC_CompValueZero,
+			.dc_cut_level = kDMIC_DcCut39,
+			.post_dc_gain_reduce = 1,
+			.saturate16bit = 1U,
+			.sample_rate = kDMIC_PhyFullSpeed
+	};
+
+	/* DMIC clock */
+	CLOCK_AttachClk(kFRO12M_to_DMIC);
+
+	/* Do we need this? */
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM9);
+
+	/* Divider 12MHz/(4+1) = 48 KHz sample rate*/
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 4, false);
+
+	DMIC_Init(DMIC0);
+	DMIC_ConfigIO(DMIC0, kDMIC_PdmDual);
+	DMIC_Use2fs(DMIC0, true);
+	DMIC_SetOperationMode(DMIC0, kDMIC_OperationModeDma);
+	DMIC_ConfigChannel(DMIC0, kDMIC_Channel1, kDMIC_Left, &dmic_channel_cfg);
+	DMIC_FifoChannel(DMIC0, kDMIC_Channel1, 15, true, true);
+	DMIC_EnableChannnel(DMIC0, DMIC_CHANEN_EN_CH1(1));
 }

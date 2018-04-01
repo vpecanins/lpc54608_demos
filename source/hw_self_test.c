@@ -20,6 +20,62 @@ static const uint16_t rgb555(const uint8_t r,const uint8_t g,const uint8_t b) {
 	return (b << 10) | (g << 5) | (r & 0x1F);
 }
 
+typedef union point16 {
+	uint32_t uval;
+	struct {
+		int16_t x;
+		int16_t y;
+	};
+} point16_t;
+
+point16_t p0;
+
+void lcd_draw_pixel(point16_t p)
+{
+
+	uint32_t * gfx_buffer32 = (uint32_t*) gfx_buffer;
+	uint32_t xh = p.x >> 3;
+	uint32_t xl = (p.x & 0x07U) << 2;
+	uint32_t px = gfx_buffer32[xh + 60*p.y];
+	px &= ~(0x0FU << xl);
+	px |= 0x0F << xl;
+	gfx_buffer32[xh + 60*p.y] = px;
+}
+
+#define ABS(X)  ((X) > 0 ? (X) : -(X))
+
+void lcd_draw_line(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)
+{
+	int32_t dx = ABS(x1 - x0);
+	int32_t dy = ABS(y1 - y0);
+
+	if (dx<dy) {
+		/*to do*/
+	}
+
+	int32_t D = 2*dy - dx;
+	int32_t y = y0;
+	point16_t p0;
+
+	int32_t yinc = 1;
+
+	if (dy < 0) {
+		yinc = -1;
+		dy = -dy;
+	}
+
+	for (int32_t x=x0; x<=x1; x++) {
+		p0.x = x;
+		p0.y = y;
+		lcd_draw_pixel(p0);
+		if (D>0) {
+			y = y + yinc;
+			D = D - 2*dx;
+		}
+		D = D + 2*dy;
+	}
+}
+
 void lcd_test_pattern()
 {
 	LCD->PAL[0] = rgb555(0,0,0) | (rgb555(31,0,0) << 16);
@@ -35,6 +91,8 @@ void lcd_test_pattern()
 	for (uint32_t j = 0; j<272; j++)
 		for (uint32_t i = 0; i<240; i++)
 			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
+
+	lcd_draw_line(10, 10, 50, 40);
 }
 
 status_t SDRAM_DataBusCheck(volatile uint32_t *address)

@@ -47,6 +47,9 @@ void BOARD_InitBootPins(void);
  * @brief Selects pin function 1 */
 #define IOCON_PIO_FUNC1 0x01u
 /*!
+ * @brief Selects pin function 5 */
+#define IOCON_PIO_FUNC5 0x05u
+/*!
  * @brief Selects pin function 6 */
 #define IOCON_PIO_FUNC6 0x06u
 /*!
@@ -869,6 +872,50 @@ void BOARD_InitBootPins(void);
 /*!
  * @brief Identifier name */
 #define BOARD_INITPINS_FC2_SCLX_NAME "FC2_SCLX"
+/* @} */
+
+/*! @name PDM1_CLK (coord L14), J13[18]/JS25[3]/DMIC1[4]/P1_2-PDM1_CLK
+  @{ */
+/*!
+ * @brief Device name: DMIC0 */
+#define BOARD_INITPINS_PDM1_CLK_PERIPHERAL DMIC0
+/*!
+ * @brief DMIC0 signal: CLK */
+#define BOARD_INITPINS_PDM1_CLK_SIGNAL CLK
+/*!
+ * @brief DMIC0 CLK channel: 1 */
+#define BOARD_INITPINS_PDM1_CLK_CHANNEL 1
+/*!
+ * @brief Pin name */
+#define BOARD_INITPINS_PDM1_CLK_PIN_NAME PDM1_CLK
+/*!
+ * @brief Label */
+#define BOARD_INITPINS_PDM1_CLK_LABEL "J13[18]/JS25[3]/DMIC1[4]/P1_2-PDM1_CLK"
+/*!
+ * @brief Identifier name */
+#define BOARD_INITPINS_PDM1_CLK_NAME "PDM1_CLK"
+/* @} */
+
+/*! @name PDM1_DATA (coord J13), JS26[3]/DMIC1[1]/P1_3-PDM1_DATA
+  @{ */
+/*!
+ * @brief Device name: DMIC0 */
+#define BOARD_INITPINS_PDM1_DATA_PERIPHERAL DMIC0
+/*!
+ * @brief DMIC0 signal: DATA */
+#define BOARD_INITPINS_PDM1_DATA_SIGNAL DATA
+/*!
+ * @brief DMIC0 DATA channel: 1 */
+#define BOARD_INITPINS_PDM1_DATA_CHANNEL 1
+/*!
+ * @brief Pin name */
+#define BOARD_INITPINS_PDM1_DATA_PIN_NAME PDM1_DATA
+/*!
+ * @brief Label */
+#define BOARD_INITPINS_PDM1_DATA_LABEL "JS26[3]/DMIC1[1]/P1_3-PDM1_DATA"
+/*!
+ * @brief Identifier name */
+#define BOARD_INITPINS_PDM1_DATA_NAME "PDM1_DATA"
 /* @} */
 
 /*!

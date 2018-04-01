@@ -185,6 +185,10 @@ BOARD_InitPins:
     i2c_drive: high, i2c_filter: enabled}
   - {pin_num: E2, peripheral: FLEXCOMM2, signal: RTS_SCL_SSEL1, pin_signal: PIO3_24/FC2_RTS_SCL_SSEL1/CTIMER4_CAP0/USB0_VBUS, invert: disabled, glitch_filter: disabled,
     i2c_slew: i2c, i2c_drive: high, i2c_filter: enabled}
+  - {pin_num: L14, peripheral: DMIC0, signal: 'CLK, 1', pin_signal: PIO1_2/CAN0_TD/CTIMER0_MAT3/SCT0_GPI6/PDM1_CLK/USB1_PORTPWRN, mode: pullUp, invert: disabled,
+    glitch_filter: disabled, slew_rate: standard, open_drain: disabled}
+  - {pin_num: J13, peripheral: DMIC0, signal: 'DATA, 1', pin_signal: PIO1_3/CAN0_RD/SCT0_OUT4/PDM1_DATA/USB0_PORTPWRN, mode: pullUp, invert: disabled, glitch_filter: disabled,
+    slew_rate: standard, open_drain: disabled}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -705,6 +709,23 @@ void BOARD_InitPins(void)
     /* PORT1 PIN19 (coords: L1) is configured as EMC_D(8) */
     IOCON_PinMuxSet(IOCON, 1U, 19U, port1_pin19_config);
 
+    const uint32_t port1_pin2_config = (/* Pin is configured as PDM1_CLK */
+                                        IOCON_PIO_FUNC5 |
+                                        /* Selects pull-up function */
+                                        IOCON_PIO_MODE_PULLUP |
+                                        /* Input function is not inverted */
+                                        IOCON_PIO_INV_DI |
+                                        /* Enables digital function */
+                                        IOCON_PIO_DIGITAL_EN |
+                                        /* Input filter disabled */
+                                        IOCON_PIO_INPFILT_OFF |
+                                        /* Standard mode, output slew rate control is enabled */
+                                        IOCON_PIO_SLEW_STANDARD |
+                                        /* Open drain is disabled */
+                                        IOCON_PIO_OPENDRAIN_DI);
+    /* PORT1 PIN2 (coords: L14) is configured as PDM1_CLK */
+    IOCON_PinMuxSet(IOCON, 1U, 2U, port1_pin2_config);
+
     const uint32_t port1_pin20_config = (/* Pin is configured as EMC_D(9) */
                                          IOCON_PIO_FUNC6 |
                                          /* No addition pin function */
@@ -857,6 +878,23 @@ void BOARD_InitPins(void)
                                          IOCON_PIO_OPENDRAIN_DI);
     /* PORT1 PIN29 (coords: C11) is configured as EMC_D(13) */
     IOCON_PinMuxSet(IOCON, 1U, 29U, port1_pin29_config);
+
+    const uint32_t port1_pin3_config = (/* Pin is configured as PDM1_DATA */
+                                        IOCON_PIO_FUNC5 |
+                                        /* Selects pull-up function */
+                                        IOCON_PIO_MODE_PULLUP |
+                                        /* Input function is not inverted */
+                                        IOCON_PIO_INV_DI |
+                                        /* Enables digital function */
+                                        IOCON_PIO_DIGITAL_EN |
+                                        /* Input filter disabled */
+                                        IOCON_PIO_INPFILT_OFF |
+                                        /* Standard mode, output slew rate control is enabled */
+                                        IOCON_PIO_SLEW_STANDARD |
+                                        /* Open drain is disabled */
+                                        IOCON_PIO_OPENDRAIN_DI);
+    /* PORT1 PIN3 (coords: J13) is configured as PDM1_DATA */
+    IOCON_PinMuxSet(IOCON, 1U, 3U, port1_pin3_config);
 
     const uint32_t port1_pin30_config = (/* Pin is configured as EMC_D(14) */
                                          IOCON_PIO_FUNC6 |

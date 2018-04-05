@@ -51,7 +51,7 @@
  * Definitions
  ******************************************************************************/
 __attribute__(( section(".noinit.$RAM4"), aligned(8) ))
-uint8_t gfx_buffer[480*272/2] = {0};
+uint8_t gfx_buffer[480*272] = {0};
 
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
 uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};

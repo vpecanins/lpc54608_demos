@@ -33,8 +33,8 @@ void lcd_test_pattern()
 	LCD->PAL[7] = rgb555(0,15,15) | (rgb555(23,23,23) << 16);
 
 	for (uint32_t j = 0; j<272; j++)
-		for (uint32_t i = 0; i<240; i++)
-			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
+		for (uint32_t i = 0; i<480; i++)
+			gfx_buffer[i+480*j] = (i/(480/16)); // one pixel
 }
 
 status_t SDRAM_DataBusCheck(volatile uint32_t *address)

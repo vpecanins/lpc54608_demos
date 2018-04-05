@@ -105,15 +105,8 @@ void lcd_test_pattern()
 	LCD->PAL[7] = rgb555(0,15,15) | (rgb555(23,23,23) << 16);
 
 	for (uint32_t j = 0; j<272; j++)
-		for (uint32_t i = 0; i<240; i++)
-			gfx_buffer[i+240*j] = 0x00;
-			//gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
-
-
-	lcd_draw_line((point16_t){.x=10, .y=40}, (point16_t){50, .y=10});
-	lcd_draw_line((point16_t){.x=110, .y=10}, (point16_t){150, .y=40});
-	lcd_draw_line((point16_t){.x=210, .y=70}, (point16_t){250, .y=10});
-	lcd_draw_line((point16_t){.x=310, .y=10}, (point16_t){350, .y=70});
+		for (uint32_t i = 0; i<480; i++)
+			gfx_buffer[i+480*j] = (i/(480/16)); // one pixel
 }
 
 status_t SDRAM_DataBusCheck(volatile uint32_t *address)

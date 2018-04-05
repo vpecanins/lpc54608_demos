@@ -68,8 +68,6 @@ uint8_t gfx_buffer[480*272/2] = {0};
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
 uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
 
-extern EventGroupHandle_t rx_full_event;
-
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -91,8 +89,6 @@ int main(void)
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 
 	DMA_Init(DMA0);
-
-	rx_full_event = xEventGroupCreate();
 
     TEST_SDRAM();
     TEST_SPIFI();

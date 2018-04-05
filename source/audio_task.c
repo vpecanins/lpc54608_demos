@@ -50,8 +50,10 @@ static dma_handle_t dma_handle;
 
 int16_t * curr_buffer = rx_q15_buffer_a;
 
-EventGroupHandle_t rx_full_event = NULL;
 bool rx_full_flag = 0;
+bool dsp_run_flag = 0;
+
+uint32_t rx_overrun = 0;
 
 /*******************************************************************************
  * Code
@@ -59,8 +61,6 @@ bool rx_full_flag = 0;
 
 void audio_task(void *pvParameters)
 {
-
-
 	vTaskDelay(100);
 
 	/* DMIC DMA Channel 17 */
@@ -74,20 +74,14 @@ void audio_task(void *pvParameters)
 
 	DMA_StartTransfer(&dma_handle);
 
-	EventBits_t event_bits;
 	    while (1)
 	    {
-	        event_bits = xEventGroupWaitBits(rx_full_event,  // The event group handle.
-	                                         (1<<0)|(1<<1),  // The bit pattern the event group is waiting for.
-	                                         pdTRUE,         // bits will be cleared automatically.
-	                                         pdFALSE,        // Don't wait for both bits, either bit unblock task
-	                                         portMAX_DELAY); // Block indefinitely to wait for the condition to be met.
-
-	    	/*while (!rx_full_flag) {
+	    	while (!rx_full_flag) {
 	    		vTaskDelay(50);
 	    	}
 
-	    	rx_full_flag = 0;*/
+	    	rx_full_flag = 0;
+	    	dsp_run_flag = 1;
 
 			sum=0;
 			for (uint32_t i=0; i<BUFFER_LENGTH; i++) {
@@ -96,8 +90,8 @@ void audio_task(void *pvParameters)
 				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 8;
 				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 8;
 			}
-			printf("RX %d\r\n", sum);
 
+			dsp_run_flag = 0;
 	}
 
     vTaskSuspend(NULL);
@@ -106,22 +100,17 @@ void audio_task(void *pvParameters)
 /* DMIC user callback */
 void DMIC_DMA_Callback(dma_handle_t *handle, void *param, bool transferDone, uint32_t intAB)
 {
-	BaseType_t xHigherPriorityTaskWoken=0, xResult;
-
 	if (transferDone) {
+		if (dsp_run_flag) {
+			rx_overrun++;
+		}
+
 		if (intAB == kDMA_IntA) {
 			curr_buffer = rx_q15_buffer_a;
 		} else {
 			curr_buffer = rx_q15_buffer_b;
 		}
 		rx_full_flag = 1;
-
-		xResult = xEventGroupSetBitsFromISR(
-				rx_full_event,
-				1<<intAB,
-				&xHigherPriorityTaskWoken );
-
-		if( xResult != pdFAIL ) portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 	}
 }
 
@@ -130,7 +119,7 @@ void DMIC_DMA_Callback(dma_handle_t *handle, void *param, bool transferDone, uin
  *
  *  .--------------------.
  *  | DMA xfer Head      |-----------------. - - - - - - - - - - - - - - - - - - - - - - -
- *  | Like dma_desc_a[0] |                 |                (if N==1)                     .
+ *  | Same dma_desc_a[0] |                 |                (if N==1)                     .
  *  '--------------------'                 |                                              .
  *                                         |                                              .
  *  DMA Transfer descriptors:              V                                              .

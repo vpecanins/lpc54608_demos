@@ -44,35 +44,51 @@ void lcd_draw_pixel(point16_t p)
 
 #define ABS(X)  ((X) > 0 ? (X) : -(X))
 
-void lcd_draw_line(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)
+void lcd_draw_line(point16_t p0, point16_t p1)
 {
-	int32_t dx = ABS(x1 - x0);
-	int32_t dy = ABS(y1 - y0);
+	int32_t dx = (p1.x - p0.x);
+	int32_t dy = (p1.y - p0.y);
 
-	if (dx<dy) {
-		/*to do*/
-	}
+	if (dx<dy) { // Steep
+		int32_t D = 2*dx - dy;
+		int32_t x = p0.x;
+		point16_t p;
 
-	int32_t D = 2*dy - dx;
-	int32_t y = y0;
-	point16_t p0;
+		int32_t xinc = 1;
 
-	int32_t yinc = 1;
-
-	if (dy < 0) {
-		yinc = -1;
-		dy = -dy;
-	}
-
-	for (int32_t x=x0; x<=x1; x++) {
-		p0.x = x;
-		p0.y = y;
-		lcd_draw_pixel(p0);
-		if (D>0) {
-			y = y + yinc;
-			D = D - 2*dx;
+		if (dx < 0) {
+			xinc = -1;
+			dx = -dx;
 		}
-		D = D + 2*dy;
+
+		for (int32_t y=p0.y; y<=p1.y; y++) {
+			lcd_draw_pixel((point16_t){.x = x, .y = y});
+			if (D>0) {
+				x = x + xinc;
+				D = D - 2*dy;
+			}
+			D = D + 2*dx;
+		}
+	} else { // Not steep
+		int32_t D = 2*dy - dx;
+		int32_t y = p0.y;
+		point16_t p;
+
+		int32_t yinc = 1;
+
+		if (dy < 0) {
+			yinc = -1;
+			dy = -dy;
+		}
+
+		for (int32_t x=p0.x; x<=p1.x; x++) {
+			lcd_draw_pixel((point16_t){.x = x, .y = y});
+			if (D>0) {
+				y = y + yinc;
+				D = D - 2*dx;
+			}
+			D = D + 2*dy;
+		}
 	}
 }
 
@@ -90,9 +106,14 @@ void lcd_test_pattern()
 
 	for (uint32_t j = 0; j<272; j++)
 		for (uint32_t i = 0; i<240; i++)
-			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
+			gfx_buffer[i+240*j] = 0x00;
+			//gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
 
-	lcd_draw_line(10, 10, 50, 40);
+
+	lcd_draw_line((point16_t){.x=10, .y=40}, (point16_t){50, .y=10});
+	lcd_draw_line((point16_t){.x=110, .y=10}, (point16_t){150, .y=40});
+	lcd_draw_line((point16_t){.x=210, .y=70}, (point16_t){250, .y=10});
+	lcd_draw_line((point16_t){.x=310, .y=10}, (point16_t){350, .y=70});
 }
 
 status_t SDRAM_DataBusCheck(volatile uint32_t *address)

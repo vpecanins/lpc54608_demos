@@ -211,3 +211,27 @@ void gfx_draw_string_at(uint16_t line, uint16_t col, char *ptr)
 	  ptr, LEFT_ALIGN);
 }
 
+void gfx_draw_hline(point16_t p, uint16_t len, uint8_t color)
+{
+	do {
+		gfx_draw_pixel(p, color);
+		p.x++;
+	} while (len--);
+}
+
+void gfx_draw_vline(point16_t p, uint16_t len, uint8_t color)
+{
+	do {
+		gfx_draw_pixel(p, color);
+		p.y++;
+	} while (len--);
+}
+
+void gfx_draw_rect(point16_t p, point16_t size, uint8_t color)
+{
+	gfx_draw_hline(p, size.x, color);
+	gfx_draw_vline(p, size.y, color);
+	gfx_draw_hline(POINT16(p.x, p.y + size.y), size.x, color);
+	gfx_draw_vline(POINT16(p.x + size.x, p.y), size.y, color);
+}
+

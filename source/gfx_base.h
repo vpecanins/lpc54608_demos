@@ -10,6 +10,8 @@
 #define GFX_HEIGHT 272
 #define GFX_WIDTH 480
 
+
+
  struct gfx_font {
 	 const uint8_t *table;
 	 uint16_t Width;
@@ -31,13 +33,15 @@
 	 uint32_t uval;
  } point16_t;
 
+#define POINT16(xa,ya) (point16_t){x: (xa), y: (ya)}
+
 void gfx_draw_pixel(point16_t p, uint8_t color);
 void gfx_draw_line(point16_t p0, point16_t p1, uint8_t color);
 void gfx_draw_line_pattern(point16_t p0, point16_t p1, uint8_t color, uint32_t pattern);
 
-void gfx_draw_hline(uint16_t x, uint16_t y, uint16_t len);
-void gfx_draw_vline(uint16_t x, uint16_t y, uint16_t len);
-void gfx_draw_rect(uint16_t x, uint16_t y, uint16_t Width, uint16_t Height);
+void gfx_draw_hline(point16_t p, uint16_t len, uint8_t color);
+void gfx_draw_vline(point16_t p, uint16_t len, uint8_t color);
+void gfx_draw_rect(point16_t p, point16_t size, uint8_t color);
 
 void gfx_fill_rect(point16_t p, point16_t size, uint8_t color);
 

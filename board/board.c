@@ -296,7 +296,7 @@ void BOARD_InitDMIC(void)
 			.gainshft = 2U,
 			.preac2coef = kDMIC_CompValueZero,
 			.preac4coef = kDMIC_CompValueZero,
-			.dc_cut_level = kDMIC_DcCut39,
+			.dc_cut_level = kDMIC_DcCut78,
 			.post_dc_gain_reduce = 1,
 			.saturate16bit = 1U,
 			.sample_rate = kDMIC_PhyFullSpeed

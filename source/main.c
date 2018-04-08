@@ -121,7 +121,7 @@ int main(void)
     	}
     }
 
-    if (xTaskCreate(monitor_task, "Monitor_task", 200, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
+    if (xTaskCreate(monitor_task, "Monitor_task", 200, NULL, (configMAX_PRIORITIES - 3), NULL) != pdPASS)
     {
     	printf("Task creation failed!.\r\n");
     	while (1) {

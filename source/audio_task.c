@@ -106,6 +106,8 @@ void audio_task(void *pvParameters)
 			gfx_fill_rect((point16_t) {x:10,y:20+200-yy}, (point16_t) {x:10,y:yy}, 0x01);
 
 			dsp_run_flag = 0;
+
+			if (rx_overrun) gfx_fill_rect((point16_t) {x:200,y:220}, (point16_t) {x:10,y:10}, rx_overrun % 16);
 	}
 
     vTaskSuspend(NULL);

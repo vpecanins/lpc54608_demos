@@ -60,6 +60,7 @@ void BOARD_InitLCD(void);
 void BOARD_InitSPIFI(void);
 void BOARD_InitTouchPanel(void);
 void BOARD_InitDMIC(void);
+void BOARD_InitCTIMER3(void);
 
 #if defined(__cplusplus)
 }

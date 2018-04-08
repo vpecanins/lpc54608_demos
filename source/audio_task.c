@@ -24,9 +24,9 @@
  ******************************************************************************/
 
 #define DMAREQ_DMIC0 16U // Not used
-#define DMAREQ_DMIC1 17U
+#define DMAREQ_DMIC1 17
 
-#define BUFFER_LENGTH (2048*4)
+#define BUFFER_LENGTH (2048/4)
 #define DMIC_CHANNEL 1
 #define DMIC_DMA_MAX_XFER 8 // Maximum FFT size is 8*1024
 
@@ -61,12 +61,14 @@ uint32_t rx_overrun = 0;
  * Code
  ******************************************************************************/
 
+float asm_log2(float x);
+
 void audio_task(void *pvParameters)
 {
 	vTaskDelay(100);
 
 	gfx_fill_rect((point16_t) {x:0,y:0}, (point16_t) {x:480,y:272}, 0x00);
-	gfx_draw_string_at(0, 0, "Hello World");
+	gfx_draw_string_at(0, 0, "Microphone level");
 
 	/* DMIC DMA Channel 17 */
 	DMA_EnableChannel(DMA0, DMAREQ_DMIC1);
@@ -82,19 +84,26 @@ void audio_task(void *pvParameters)
 	    while (1)
 	    {
 	    	while (!rx_full_flag) {
-	    		vTaskDelay(50);
+	    		vTaskDelay(1);
 	    	}
 
 	    	rx_full_flag = 0;
 	    	dsp_run_flag = 1;
 
 			sum=0;
-			for (uint32_t i=0; i<BUFFER_LENGTH; i++) {
-				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 8;
-				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 8;
-				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 8;
-				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 8;
+			for (uint32_t i=0; i<BUFFER_LENGTH;) {
+				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
+				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
+				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
+				sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
 			}
+
+			uint32_t yy = (uint32_t) asm_log2((float) sum) * 6.0f;
+
+			if (yy > 200) yy = 200;
+
+			gfx_fill_rect((point16_t) {x:10,y:20}, (point16_t) {x:10,y:200-yy}, 0x08);
+			gfx_fill_rect((point16_t) {x:10,y:20+200-yy}, (point16_t) {x:10,y:yy}, 0x01);
 
 			dsp_run_flag = 0;
 	}

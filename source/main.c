@@ -44,6 +44,7 @@
 #include "board.h"
 #include "pin_mux.h"
 #include "hw_self_test.h"
+#include "gfx_base.h"
 
 /* StdLib includes */
 #include <stdbool.h>
@@ -58,6 +59,7 @@
 static void hello_task(void *pvParameters);
 static void cursor_task(void *pvParameters);
 extern void audio_task(void *pvParameters);
+static void monitor_task(void *pvParameters);
 
 /*******************************************************************************
  * Variables
@@ -82,6 +84,7 @@ int main(void)
     BOARD_InitLCD();
     BOARD_InitTouchPanel();
     BOARD_InitDMIC();
+    BOARD_InitCTIMER3();
 
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	CLOCK_EnableClock(kCLOCK_Gpio1);
@@ -118,6 +121,14 @@ int main(void)
     	}
     }
 
+    if (xTaskCreate(monitor_task, "Monitor_task", 200, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
+    {
+    	printf("Task creation failed!.\r\n");
+    	while (1) {
+
+    	}
+    }
+
     vTaskStartScheduler();
 
     while (1) {
@@ -143,4 +154,20 @@ static void cursor_task(void *pvParameters)
 	TEST_TouchCursor();
 
     vTaskSuspend(NULL);
+}
+
+static void monitor_task(void *pvParameters)
+{
+	static char stats_buffer[512];
+
+	vTaskDelay(250);
+
+	while (1) {
+		vTaskGetRunTimeStats( stats_buffer );
+
+		gfx_fill_rect((point16_t) {x: 50, y: 20}, (point16_t) {x: 250, y: 70}, 0x08);
+		gfx_draw_string((point16_t) {x: 50, y: 20}, stats_buffer, LEFT_ALIGN);
+
+		vTaskDelay(250);
+	}
 }

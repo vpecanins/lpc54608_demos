@@ -160,35 +160,46 @@ void gfx_draw_char(point16_t p, char ch, uint8_t color)
 
 void gfx_draw_string(point16_t p, char * str, enum gfx_text_align Mode)
 {
-  int32_t refcolumn = 0;
-  uint32_t i = 0;
-  uint32_t size = 0;
-  uint8_t  *ptr = (uint8_t *)str;
+	int32_t refcolumn = 0;
+	uint32_t i = 0;
+	uint32_t size = 0;
+	uint8_t  *ptr = (uint8_t *)str;
 
-  /* Get the text size */
-  while (*ptr++) size ++ ;
+	/* Get the text size */
+	while (*ptr++) size ++ ;
 
-  switch (Mode) {
-  case CENTER_ALIGN:
-      p.x = p.x - size * gfx_current_font->Width / 2;
-      break;
-  case RIGHT_ALIGN:
-      p.x = - p.x - size * gfx_current_font->Width;
-      break;
-  default:
-      break;
-  }
+	switch (Mode) {
+	case CENTER_ALIGN:
+		p.x = p.x - size * gfx_current_font->Width / 2;
+		break;
+	case RIGHT_ALIGN:
+		p.x = - p.x - size * gfx_current_font->Width;
+		break;
+	default:
+		break;
+	}
 
-  refcolumn = refcolumn < 0 ? 0 : refcolumn;
+	refcolumn = refcolumn < 0 ? 0 : refcolumn;
 
-  /* Send the string character by character on LCD */
-  while ((*str != 0) & (((GFX_WIDTH - (i*gfx_current_font->Width)) & 0xFFFF) >= gfx_current_font->Width))
-  {
-    gfx_draw_char(p, *(uint8_t *)str, gfx_text_color);
-    p.x += gfx_current_font->Width;
-    str++;
-    i++;
-  }
+	point16_t p2 = p;
+
+	/* Send the string character by character on LCD */
+	while ((*str != 0) & (((GFX_WIDTH - (i*gfx_current_font->Width)) & 0xFFFF) >= gfx_current_font->Width))
+	{
+		if(*str == '\n') {
+			p2.x=p.x;
+			p2.y += gfx_current_font->Height;
+			i=0;
+		} else if (*str == '\t') {
+			p2.x += gfx_current_font->Width;
+			i++;
+		} else {
+			gfx_draw_char(p2, *(uint8_t *)str, gfx_text_color);
+			p2.x += gfx_current_font->Width;
+			i++;
+		}
+		str++;
+	}
 }
 
 void gfx_draw_string_at(uint16_t line, uint16_t col, char *ptr)

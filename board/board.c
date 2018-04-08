@@ -41,6 +41,7 @@
 #include "fsl_spifi.h"
 #include "fsl_ft5406.h"
 #include "fsl_dmic.h"
+#include "fsl_ctimer.h"
 
 /*******************************************************************************
  * Definitions
@@ -317,4 +318,20 @@ void BOARD_InitDMIC(void)
 	DMIC_ConfigChannel(DMIC0, kDMIC_Channel1, kDMIC_Left, &dmic_channel_cfg);
 	DMIC_FifoChannel(DMIC0, kDMIC_Channel1, 15, true, true);
 	DMIC_EnableChannnel(DMIC0, DMIC_CHANEN_EN_CH1(1));
+}
+
+void BOARD_InitCTIMER3(void) {
+	/* Setup auxiliar CTIMER (for measuring CPU usage) */
+	ctimer_config_t config = {
+		.input = kCTIMER_Capture_0,
+		.mode = kCTIMER_TimerMode,
+		.prescale = 180
+	};
+
+	CLOCK_AttachClk(kMAIN_CLK_to_ASYNC_APB);      /* Use Main clock for some of the Ctimers */
+	/* Enable the asynchronous bridge */
+	SYSCON->ASYNCAPBCTRL = 1;
+
+	CTIMER_Init(CTIMER3, &config);
+	CTIMER_StartTimer(CTIMER3);
 }

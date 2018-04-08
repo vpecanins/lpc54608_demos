@@ -17,6 +17,8 @@
 #include "fsl_dma.h"
 #include "fsl_dmic.h"
 
+#include "gfx_base.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -62,6 +64,9 @@ uint32_t rx_overrun = 0;
 void audio_task(void *pvParameters)
 {
 	vTaskDelay(100);
+
+	gfx_fill_rect((point16_t) {x:0,y:0}, (point16_t) {x:480,y:272}, 0x00);
+	gfx_draw_string_at(0, 0, "Hello World");
 
 	/* DMIC DMA Channel 17 */
 	DMA_EnableChannel(DMA0, DMAREQ_DMIC1);

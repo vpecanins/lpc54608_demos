@@ -2,12 +2,18 @@
 
 /* FreeRTOS kernel includes. */
 #include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "timers.h"
+#include "event_groups.h"
 
 /* Freescale includes. */
 #include "fsl_device_registers.h"
 #include "board.h"
 #include "pin_mux.h"
 #include "fsl_ft5406.h"
+#include "fsl_lcdc.h"
+#include "gfx_base.h"
 
 extern uint8_t gfx_buffer[];
 
@@ -18,78 +24,6 @@ extern uint8_t gfx_buffer[];
  */
 static const uint16_t rgb555(const uint8_t r,const uint8_t g,const uint8_t b) {
 	return (b << 10) | (g << 5) | (r & 0x1F);
-}
-
-typedef union point16 {
-	uint32_t uval;
-	struct {
-		int16_t x;
-		int16_t y;
-	};
-} point16_t;
-
-point16_t p0;
-
-void lcd_draw_pixel(point16_t p)
-{
-
-	uint32_t * gfx_buffer32 = (uint32_t*) gfx_buffer;
-	uint32_t xh = p.x >> 3;
-	uint32_t xl = (p.x & 0x07U) << 2;
-	uint32_t px = gfx_buffer32[xh + 60*p.y];
-	px &= ~(0x0FU << xl);
-	px |= 0x0F << xl;
-	gfx_buffer32[xh + 60*p.y] = px;
-}
-
-#define ABS(X)  ((X) > 0 ? (X) : -(X))
-
-void lcd_draw_line(point16_t p0, point16_t p1)
-{
-	int32_t dx = (p1.x - p0.x);
-	int32_t dy = (p1.y - p0.y);
-
-	if (dx<dy) { // Steep
-		int32_t D = 2*dx - dy;
-		int32_t x = p0.x;
-		point16_t p;
-
-		int32_t xinc = 1;
-
-		if (dx < 0) {
-			xinc = -1;
-			dx = -dx;
-		}
-
-		for (int32_t y=p0.y; y<=p1.y; y++) {
-			lcd_draw_pixel((point16_t){.x = x, .y = y});
-			if (D>0) {
-				x = x + xinc;
-				D = D - 2*dy;
-			}
-			D = D + 2*dx;
-		}
-	} else { // Not steep
-		int32_t D = 2*dy - dx;
-		int32_t y = p0.y;
-		point16_t p;
-
-		int32_t yinc = 1;
-
-		if (dy < 0) {
-			yinc = -1;
-			dy = -dy;
-		}
-
-		for (int32_t x=p0.x; x<=p1.x; x++) {
-			lcd_draw_pixel((point16_t){.x = x, .y = y});
-			if (D>0) {
-				y = y + yinc;
-				D = D - 2*dx;
-			}
-			D = D + 2*dy;
-		}
-	}
 }
 
 void lcd_test_pattern()

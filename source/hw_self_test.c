@@ -11,7 +11,6 @@
 #include "fsl_device_registers.h"
 #include "board.h"
 #include "pin_mux.h"
-#include "fsl_ft5406.h"
 #include "fsl_lcdc.h"
 #include "gfx_base.h"
 

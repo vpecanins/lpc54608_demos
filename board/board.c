@@ -39,7 +39,6 @@
 #include "fsl_emc.h"
 #include "fsl_lcdc.h"
 #include "fsl_spifi.h"
-#include "fsl_ft5406.h"
 #include "fsl_dmic.h"
 #include "fsl_ctimer.h"
 

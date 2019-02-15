@@ -1,11 +1,11 @@
 #include "gfx_base.h"
 
-extern uint8_t gfx_buffer[];
+extern color_t gfx_buffer[];
 
 struct gfx_font * gfx_current_font = &Font12; // Selected font
-uint32_t gfx_fill_color = 0x01;
-uint32_t gfx_text_color = 0x07;
-uint32_t gfx_back_color = 0x00;
+color_t gfx_fill_color = 0x01;
+color_t gfx_text_color = 0x07;
+color_t gfx_back_color = 0x00;
 
 void gfx_draw_pixel(point16_t p, uint8_t color)
 {
@@ -158,29 +158,9 @@ void gfx_draw_char(point16_t p, char ch, uint8_t color)
 	}
 }
 
-void gfx_draw_string(point16_t p, char * str, enum gfx_text_align Mode)
+void gfx_draw_string(point16_t p, char * str, color_t color)
 {
-	int32_t refcolumn = 0;
 	uint32_t i = 0;
-	uint32_t size = 0;
-	uint8_t  *ptr = (uint8_t *)str;
-
-	/* Get the text size */
-	while (*ptr++) size ++ ;
-
-	switch (Mode) {
-	case CENTER_ALIGN:
-		p.x = p.x - size * gfx_current_font->Width / 2;
-		break;
-	case RIGHT_ALIGN:
-		p.x = - p.x - size * gfx_current_font->Width;
-		break;
-	default:
-		break;
-	}
-
-	refcolumn = refcolumn < 0 ? 0 : refcolumn;
-
 	point16_t p2 = p;
 
 	/* Send the string character by character on LCD */
@@ -195,7 +175,7 @@ void gfx_draw_string(point16_t p, char * str, enum gfx_text_align Mode)
 			p2.x += gfx_current_font->Width;
 			i++;
 		} else {
-			gfx_draw_char(p2, *(uint8_t *)str, gfx_text_color);
+			gfx_draw_char(p2, *(uint8_t *)str, color);
 			p2.x += gfx_current_font->Width;
 			i++;
 		}
@@ -203,12 +183,27 @@ void gfx_draw_string(point16_t p, char * str, enum gfx_text_align Mode)
 	}
 }
 
-void gfx_draw_string_at(uint16_t line, uint16_t col, char *ptr)
+void gfx_draw_string_center(point16_t p, char * str, color_t color)
+{
+	uint32_t size = 0;
+	uint8_t  *ptr = (uint8_t *)str;
+
+	/* Get the text size */
+	while (*ptr++) size ++ ;
+
+	p.x = p.x - size * gfx_current_font->Width / 2;
+
+	gfx_draw_string(p, str, color);
+
+	//case RIGHT_ALIGN:
+	//	p.x = - p.x - size * gfx_current_font->Width;
+
+}
+
+void gfx_draw_string_at(uint16_t line, uint16_t col, char *ptr, color_t color)
 {
   gfx_draw_string(
-		  (point16_t) {x: col * gfx_current_font->Width,
-					   y: line * gfx_current_font->Height},
-	  ptr, LEFT_ALIGN);
+	  POINT16( col * gfx_current_font->Width, line * gfx_current_font->Height), ptr, color);
 }
 
 void gfx_draw_hline(point16_t p, uint16_t len, uint8_t color)

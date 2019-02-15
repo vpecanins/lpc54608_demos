@@ -43,6 +43,9 @@ struct gfx_graph_desc {
 	uint32_t npoints;
 	point16_t * points;
 	uint32_t * index;
+	uint8_t color;
+	uint8_t border_color;
+	uint8_t div_color;
 };
 
 /*******************************************************************************
@@ -97,7 +100,11 @@ static const struct gfx_graph_desc my_gd = {
 
 		.points = &graph_p,
 		.index = &graph_i,
-		.npoints = GRAPH_NPOINTS
+		.npoints = GRAPH_NPOINTS,
+
+		.color = 120,
+		.border_color = 0xFF,
+		.div_color = 10
 };
 
 /*******************************************************************************
@@ -109,7 +116,7 @@ void audio_task(void *pvParameters)
 	vTaskDelay(100);
 
 	// Clear all LCD framebuffer to black
-	gfx_fill_rect((point16_t) {x:0,y:0}, (point16_t) {x:480,y:272}, 0x00);
+	gfx_fill_rect(POINT16(0, 0), POINT16(480, 272), 0x00);
 
 	gfx_graph_init(&my_gd);
 
@@ -149,14 +156,17 @@ void audio_task(void *pvParameters)
 		gfx_fill_rect((point16_t) {x:460,y:5+250-yy}, (point16_t) {x:10,y:yy}, 0x01);
 
 		for (uint32_t i=0; i<my_gd.npoints; i++) {
-			my_gd.points[i].y = (curr_buffer[my_gd.index[i]]>>8) + my_gd.size.y/2;
+			my_gd.points[i].y = (curr_buffer[my_gd.index[i]]>>4) + my_gd.size.y/2;
 		}
+
+		// Clear all LCD framebuffer to black
+		gfx_fill_rect(my_gd.pos, my_gd.size, 0x00);
 
 		gfx_draw_graph(&my_gd);
 
 		dsp_run_flag = 0;
 
-		if (rx_overrun) gfx_fill_rect((point16_t) {x:200,y:220}, (point16_t) {x:10,y:10}, rx_overrun % 16);
+		if (rx_overrun) gfx_fill_rect(POINT16(200, 220), POINT16(10, 10), rx_overrun % 16);
 	}
 
 	vTaskSuspend(NULL);
@@ -307,7 +317,7 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 	pa = gd->pxlabels;
 
 	while (gd->xlabels[i]) {
-		gfx_draw_string(pa, gd->xlabels[i], CENTER_ALIGN);
+		gfx_draw_string(pa, gd->xlabels[i], 0xFF);
 		pa.x+=45;
 		i++;
 	}
@@ -316,13 +326,13 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 	i=0;
 
 	while (gd->ylabels[i]) {
-		gfx_draw_string(pa, gd->ylabels[i], LEFT_ALIGN);
+		gfx_draw_string(pa, gd->ylabels[i], 0xFF);
 		pa.y+=25;
 		i++;
 	}
 
 	// Draw graph box
-	gfx_draw_rect(POINT16(gd->pos.x-1, gd->pos.y-1), POINT16(gd->size.x+1, gd->size.y+1), 0x07U);
+	gfx_draw_rect(POINT16(gd->pos.x-1, gd->pos.y-1), POINT16(gd->size.x+1, gd->size.y+1), gd->border_color);
 
 	pa = POINT16(gd->pos.x, gd->pos.y);
 	pb = POINT16(gd->pos.x + gd->size.x, gd->pos.y);
@@ -331,7 +341,7 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 
 		pa.y += gd->size.y / (gd->ydiv + 1);
 		pb.y += gd->size.y / (gd->ydiv + 1);
-		gfx_draw_line_pattern(pa, pb, 0x08, 0xF0F0F0F0);
+		gfx_draw_line_pattern(pa, pb, gd->div_color, 0xF0F0F0F0);
 	}
 
 	pa = POINT16(gd->pos.x, gd->pos.y);
@@ -341,7 +351,7 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 
 		pa.x += gd->size.x / (gd->xdiv + 1);
 		pb.x += gd->size.x / (gd->xdiv + 1);
-		gfx_draw_line_pattern(pa, pb, 0x08, 0xF0F0F0F0);
+		gfx_draw_line_pattern(pa, pb, gd->div_color, 0xF0F0F0F0);
 	}
 
 	// Icons on top of graph background
@@ -368,7 +378,7 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 void gfx_draw_graph(struct gfx_graph_desc * gd)
 {
 	for (uint32_t i=1; i<gd->npoints; i++) {
-		gfx_draw_line(gd->points[i-1], gd->points[i], 0x02);
+		gfx_draw_line(gd->points[i-1], gd->points[i], gd->color);
 	}
 }
 

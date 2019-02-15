@@ -65,7 +65,7 @@ static void monitor_task(void *pvParameters);
  * Variables
  ******************************************************************************/
 __attribute__(( section(".noinit.$RAM4"), aligned(8) ))
-uint8_t gfx_buffer[480*272] = {0};
+color_t gfx_buffer[480*272] = {0};
 
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
 uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
@@ -165,8 +165,8 @@ static void monitor_task(void *pvParameters)
 	while (1) {
 		vTaskGetRunTimeStats( stats_buffer );
 
-		gfx_fill_rect((point16_t) {x: 50, y: 20}, (point16_t) {x: 250, y: 70}, 0x08);
-		gfx_draw_string((point16_t) {x: 50, y: 20}, stats_buffer, LEFT_ALIGN);
+		gfx_fill_rect(POINT16(50, 20), POINT16(250, 70), 0x52);
+		gfx_draw_string(POINT16(50, 20), stats_buffer, 0xFF);
 
 		vTaskDelay(250);
 	}

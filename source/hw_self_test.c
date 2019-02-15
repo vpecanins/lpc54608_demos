@@ -26,21 +26,32 @@ static const uint16_t rgb555(const uint8_t r,const uint8_t g,const uint8_t b) {
 	return (b << 10) | (g << 5) | (r & 0x1F);
 }
 
+static void gfx_draw_int(uint16_t x, uint16_t y, uint16_t n) {
+	static char buf[16];
+
+	sprintf(buf, "%d", n);
+
+	gfx_draw_string((point16_t) {x: x,y: y}, buf, 0xFF);
+}
+
 void lcd_test_pattern()
 {
-	LCD->PAL[0] = rgb555(0,0,0) | (rgb555(31,0,0) << 16);
-	LCD->PAL[1] = rgb555(0,31,0) | (rgb555(0,0,31) << 16);
-	LCD->PAL[2] = rgb555(31,31,0) | (rgb555(31,0,31) << 16);
-	LCD->PAL[3] = rgb555(0,31,31) | (rgb555(31,31,31) << 16);
-
-	LCD->PAL[4] = rgb555(15,15,15) | (rgb555(15,0,0) << 16);
-	LCD->PAL[5] = rgb555(0,15,0) | (rgb555(0,0,15) << 16);
-	LCD->PAL[6] = rgb555(15,15,0) | (rgb555(15,0,15) << 16);
-	LCD->PAL[7] = rgb555(0,15,15) | (rgb555(23,23,23) << 16);
+	for (uint32_t i=0; i<128; i++) {
+		LCD->PAL[i] =
+				rgb555((2*i & 0x07)<<2, (((2*i)>>3) & 0x07)<<2, (((2*i)>>6) & 0x03)<<3) |
+				rgb555(((2*i+1) & 0x07)<<2, (((2*i+1)>>3) & 0x07)<<2, (((2*i+1)>>6) & 0x03)<<3) << 16;
+	};
 
 	for (uint32_t j = 0; j<272; j++)
-		for (uint32_t i = 0; i<480; i++)
-			gfx_buffer[i+480*j] = (i/(480/16)); // one pixel
+		for (uint32_t i = 0; i<480; i++) {
+			gfx_buffer[i+480*j] = (i/(480/16)) | ((j/(272/16))<<4); // one pixel
+		}
+
+
+	for (uint32_t j = 0; j<16; j++)
+		for (uint32_t i = 0; i<16; i++)
+			gfx_draw_int(j*480/16, i*272/16, gfx_buffer[480*i*272/16 + j*480/16]);
+
 }
 
 status_t SDRAM_DataBusCheck(volatile uint32_t *address)

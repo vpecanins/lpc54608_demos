@@ -46,6 +46,7 @@
 #include "hw_self_test.h"
 #include "gfx_base.h"
 #include "cursor_ft5406_rtos.h"
+#include "fsl_dma.h"
 
 /* StdLib includes */
 #include <stdbool.h>
@@ -70,6 +71,8 @@ color_t gfx_buffer[480*272] = {0};
 
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
 uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};
+
+EventGroupHandle_t event_group = NULL;
 
 /*******************************************************************************
  * Code
@@ -98,6 +101,8 @@ int main(void)
     TEST_SPIFI();
     TEST_LCD();
 
+    event_group = xEventGroupCreate();
+
     if (xTaskCreate(hello_task, "Hello_task", 200, NULL, (configMAX_PRIORITIES - 3), NULL) != pdPASS)
     {
     	printf("Task creation failed!.\r\n");
@@ -114,7 +119,7 @@ int main(void)
     	}
     }
 
-    if (xTaskCreate(audio_task, "Audio_task", 200, NULL, (configMAX_PRIORITIES - 1), NULL) != pdPASS)
+    if (xTaskCreate(audio_task, "Audio_task", 200, NULL, (configMAX_PRIORITIES), NULL) != pdPASS)
     {
     	printf("Task creation failed!.\r\n");
     	while (1) {
@@ -161,6 +166,8 @@ static void cursor_task(void *pvParameters)
     vTaskSuspend(NULL);
 }
 
+extern uint32_t rx_overrun;
+
 static void monitor_task(void *pvParameters)
 {
 	static char stats_buffer[512];
@@ -170,7 +177,8 @@ static void monitor_task(void *pvParameters)
 	while (1) {
 		vTaskGetRunTimeStats( stats_buffer );
 
-		printf("%s\n\n", stats_buffer);
+		if (rx_overrun) printf("Audio overrun: %d\n", rx_overrun);
+		printf("%s\n", stats_buffer);
 
 		vTaskDelay(250);
 	}

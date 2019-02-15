@@ -26,10 +26,15 @@
 #define DMAREQ_DMIC0 16U // Not used
 #define DMAREQ_DMIC1 17
 
-#define BUFFER_LENGTH (2048*4)
+#define B0 (1 << 0) // For event groups
+#define B1 (1 << 1)
+
+#define BUFFER_LENGTH (1024*2)
 #define DMIC_CHANNEL 1
 #define DMIC_DMA_MAX_XFER 8 // Maximum FFT size is 8*1024
 #define GRAPH_NPOINTS 256
+
+extern EventGroupHandle_t event_group;
 
 struct gfx_graph_desc {
 	char ** xlabels;
@@ -124,18 +129,22 @@ void audio_task(void *pvParameters)
 	DMA_EnableChannel(DMA0, DMAREQ_DMIC1);
 	DMA_CreateHandle(&dma_handle, DMA0, DMAREQ_DMIC1);
 	DMA_SetCallback(&dma_handle, DMIC_DMA_Callback, NULL);
-	NVIC_SetPriority(DMA0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+	NVIC_SetPriority(DMA0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY);
 
 	Setup_DMIC_DMA();
 	volatile uint32_t sum = 0;
 
 	DMA_StartTransfer(&dma_handle);
 
+	EventBits_t event_bits;
+
 	while (1)
 	{
-		while (!rx_full_flag) {
-			vTaskDelay(1);
-		}
+		event_bits = xEventGroupWaitBits(event_group,    /* The event group handle. */
+		                                         B0 | B1,        /* The bit pattern the event group is waiting for. */
+		                                         pdTRUE,         /* BIT_0 and BIT_4 will be cleared automatically. */
+		                                         pdFALSE,        /* Don't wait for both bits, either bit unblock task. */
+		                                         portMAX_DELAY); /* Block indefinitely to wait for the condition to be met. */
 
 		rx_full_flag = 0;
 		dsp_run_flag = 1;
@@ -159,22 +168,27 @@ void audio_task(void *pvParameters)
 		gfx_fill_rect((point16_t) {x:460,y:5+250-yy}, (point16_t) {x:10,y:yy}, 255);
 
 		int16_t y;
+		uint32_t offset = 0;
 
-		for (uint32_t i=0; i<my_gd.npoints; i++) {
-			y = (curr_buffer[my_gd.index[i]]>>4) + my_gd.size.y/2;
-			if (y > my_gd.size.y - 1) my_gd.points[i].y = my_gd.size.y + my_gd.pos.y - 1;
-			else if(y < 0) my_gd.points[i].y = my_gd.pos.y;
-			else my_gd.points[i].y = y + my_gd.pos.y;
+		while (offset < 500) {
+
+			for (uint32_t i=0; i<my_gd.npoints; i++) {
+				y = (curr_buffer[my_gd.index[i]+offset]>>4) + my_gd.size.y/2;
+				if (y > my_gd.size.y - 1) my_gd.points[i].y = my_gd.size.y + my_gd.pos.y - 1;
+				else if(y < 0) my_gd.points[i].y = my_gd.pos.y;
+				else my_gd.points[i].y = y + my_gd.pos.y;
+			}
+
+			// Clear all LCD framebuffer to black
+			//gfx_fill_rect(my_gd.pos, my_gd.size, 0x00);
+
+			gfx_draw_graph(&my_gd);
+
+			offset += my_gd.npoints;
+
 		}
 
-		// Clear all LCD framebuffer to black
-		gfx_fill_rect(my_gd.pos, my_gd.size, 0x00);
-
-		gfx_draw_graph(&my_gd);
-
 		dsp_run_flag = 0;
-
-		if (rx_overrun) gfx_fill_rect(POINT16(200, 220), POINT16(10, 10), rx_overrun % 16);
 	}
 
 	vTaskSuspend(NULL);
@@ -190,10 +204,12 @@ void DMIC_DMA_Callback(dma_handle_t *handle, void *param, bool transferDone, uin
 
 		if (intAB == kDMA_IntA) {
 			curr_buffer = rx_q15_buffer_a;
+
 		} else {
 			curr_buffer = rx_q15_buffer_b;
 		}
 		rx_full_flag = 1;
+		xEventGroupSetBitsFromISR(event_group, B0, NULL);
 	}
 }
 
@@ -226,7 +242,7 @@ void Setup_DMIC_DMA(void)
 	uint32_t xfer_length;        /*!< Length of each transfer must be < 0x400 */
 	uint32_t xfer_num;
 
-	// Calculate no. of xfer needed (Only contempled for length=2^N)
+	// Calculate no. of xfer needed (Only contempled for buffer length multiple of 1024)
 	if (BUFFER_LENGTH > DMA_MAX_TRANSFER_COUNT)
 	{
 		xfer_num = BUFFER_LENGTH / DMA_MAX_TRANSFER_COUNT;

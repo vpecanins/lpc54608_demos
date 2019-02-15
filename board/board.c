@@ -256,38 +256,6 @@ void BOARD_InitSPIFI(void)
 	SPIFI_SetMemoryCommand(SPIFI0, &spifi_command[SPIFI_CMD_READ]);
 }
 
-void BOARD_InitTouchPanel(void)
-{
-	/* attach 12 MHz clock to FLEXCOMM2 (I2C touch ctl) */
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
-
-	// Initialize Touch panel I2C interface
-	i2c_master_config_t masterConfig;
-
-	I2C_MasterGetDefaultConfig(&masterConfig);
-
-	/* Change the default baudrate configuration */
-	masterConfig.baudRate_Bps = 100000U;
-
-	/* Initialize the I2C master peripheral */
-	I2C_MasterInit(((I2C_Type *) (I2C2_BASE)), &masterConfig, 12000000);
-
-	// Touch panel RSTn pin
-	gpio_pin_config_t pin_config = {kGPIO_DigitalOutput, 0};
-
-	GPIO_PinInit(GPIO, 2, 27, &pin_config);
-
-	uint32_t i=0;
-	GPIO_WritePinOutput(GPIO, 2, 27, 1);
-	while (i < 1000U) i++;
-	i=0;
-	GPIO_WritePinOutput(GPIO, 2, 27, 0);
-	while (i < 1000U) i++;
-	i=0;
-	GPIO_WritePinOutput(GPIO, 2, 27, 1);
-	while (i < 1000U) i++;
-}
-
 void BOARD_InitDMIC(void)
 {
 	dmic_channel_config_t dmic_channel_cfg = {

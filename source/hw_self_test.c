@@ -173,30 +173,3 @@ void TEST_SPIFI(void)
 {
 
 }
-
-void TEST_TouchCursor(void)
-{
-	static ft5406_handle_t touch_handle;
-	static status_t status;
-	static uint32_t touch_count;
-	static touch_point_t touch_array[FT5406_MAX_TOUCHES];
-	static uint32_t i=0;
-
-	FT5406_Init(&touch_handle, ((I2C_Type *) (I2C2_BASE)));
-	while (1) {
-
-		status = FT5406_GetMultiTouch(&touch_handle, &touch_count, touch_array, 1);
-
-		if (status == kStatus_Success) {
-			if (touch_count >= 1) {
-				i = touch_count-1;
-				LCDC_SetCursorPosition(LCD, touch_array[i].x, touch_array[i].y);
-			}
-		} else {
-			FT5406_Init(&touch_handle, ((I2C_Type *) (I2C2_BASE)));
-			vTaskDelay(1000U);
-		}
-
-		vTaskDelay(3);
-	}
-}

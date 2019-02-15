@@ -45,6 +45,7 @@
 #include "pin_mux.h"
 #include "hw_self_test.h"
 #include "gfx_base.h"
+#include "cursor_ft5406_rtos.h"
 
 /* StdLib includes */
 #include <stdbool.h>
@@ -82,9 +83,9 @@ int main(void)
     BOARD_InitSDRAM();
     BOARD_InitSPIFI();
     BOARD_InitLCD();
-    BOARD_InitTouchPanel();
     BOARD_InitDMIC();
     BOARD_InitCTIMER3();
+    // Touch panel initialized in cursor_ft5406_rtos_task();
 
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	CLOCK_EnableClock(kCLOCK_Gpio1);
@@ -151,7 +152,11 @@ static void hello_task(void *pvParameters)
 
 static void cursor_task(void *pvParameters)
 {
-	TEST_TouchCursor();
+	cursor_ft5406_rtos_init();
+
+	while (1) {
+		cursor_ft5406_rtos_task();
+	}
 
     vTaskSuspend(NULL);
 }
@@ -165,8 +170,7 @@ static void monitor_task(void *pvParameters)
 	while (1) {
 		vTaskGetRunTimeStats( stats_buffer );
 
-		gfx_fill_rect(POINT16(50, 20), POINT16(250, 70), 0x52);
-		gfx_draw_string(POINT16(50, 20), stats_buffer, 0xFF);
+		printf("%s\n\n", stats_buffer);
 
 		vTaskDelay(250);
 	}

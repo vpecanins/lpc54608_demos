@@ -141,7 +141,10 @@ void audio_task(void *pvParameters)
 		dsp_run_flag = 1;
 
 		sum=0;
-		for (uint32_t i=0; i<BUFFER_LENGTH;) {
+		uint32_t i=0;
+
+		// Calculate squared value of each sample and add together
+		while (i<BUFFER_LENGTH) {
 			sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
 			sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
 			sum+=(curr_buffer[i] * curr_buffer[i++]) >> 4;
@@ -152,11 +155,16 @@ void audio_task(void *pvParameters)
 
 		if (yy > 250) yy = 250;
 
-		gfx_fill_rect((point16_t) {x:460,y:5}, (point16_t) {x:10,y:250-yy}, 0x08);
-		gfx_fill_rect((point16_t) {x:460,y:5+250-yy}, (point16_t) {x:10,y:yy}, 0x01);
+		gfx_fill_rect((point16_t) {x:460,y:5}, (point16_t) {x:10,y:250-yy}, 91);
+		gfx_fill_rect((point16_t) {x:460,y:5+250-yy}, (point16_t) {x:10,y:yy}, 255);
+
+		int16_t y;
 
 		for (uint32_t i=0; i<my_gd.npoints; i++) {
-			my_gd.points[i].y = (curr_buffer[my_gd.index[i]]>>4) + my_gd.size.y/2;
+			y = (curr_buffer[my_gd.index[i]]>>4) + my_gd.size.y/2;
+			if (y > my_gd.size.y - 1) my_gd.points[i].y = my_gd.size.y + my_gd.pos.y - 1;
+			else if(y < 0) my_gd.points[i].y = my_gd.pos.y;
+			else my_gd.points[i].y = y + my_gd.pos.y;
 		}
 
 		// Clear all LCD framebuffer to black
@@ -296,9 +304,9 @@ void Setup_DMIC_DMA(void)
 	dma_transfer_config_t dma_xfer_config = {
 			.isPeriph = true,
 			.srcAddr = pFifo,
-			.dstAddr = rx_q15_buffer_a,
+			.dstAddr = (uint8_t*) rx_q15_buffer_a,
 			.xfercfg = dma_xfercfg_a,
-			.nextDesc = (xfer_num == 1) ? &(dma_desc_b) : &(dma_desc_a[1])
+			.nextDesc = (xfer_num == 1) ? (uint8_t*) &(dma_desc_b) : (uint8_t*) &(dma_desc_a[1])
 	};
 
 	// Put transfer header on their private array
@@ -308,7 +316,7 @@ void Setup_DMIC_DMA(void)
 void gfx_graph_init(struct gfx_graph_desc * gd) {
 
 	// Draw graph labels
-	gfx_text_color = 0x00FFFFFF;
+	gfx_text_color = 0xFF;
 
 	uint32_t i;
 	point16_t pa, pb;

@@ -66,7 +66,7 @@ static void monitor_task(void *pvParameters);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-__attribute__(( section(".noinit.$RAM4"), aligned(8) ))
+__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
 color_t gfx_buffer[480*272] = {0};
 
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
@@ -119,7 +119,7 @@ int main(void)
     	}
     }
 
-    if (xTaskCreate(audio_task, "Audio_task", 200, NULL, (configMAX_PRIORITIES), NULL) != pdPASS)
+    if (xTaskCreate(audio_task, "Audio_task", 200, NULL, (configMAX_PRIORITIES-2), NULL) != pdPASS)
     {
     	printf("Task creation failed!.\r\n");
     	while (1) {

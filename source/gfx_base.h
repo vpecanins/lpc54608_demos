@@ -6,6 +6,7 @@
 #endif
 
 #include <stdint.h>
+#include "fsl_dma.h"
 
 #define GFX_HEIGHT 272
 #define GFX_WIDTH 480
@@ -48,6 +49,20 @@ void gfx_draw_char(point16_t p, char ch, color_t color);
 void gfx_draw_string(point16_t p, char * str, color_t color);
 void gfx_draw_string_center(point16_t p, char * str, color_t color);
 void gfx_draw_string_at(uint16_t line, uint16_t col, char *ptr, color_t color);
+
+// DMA subroutines
+void gfx_init_dma(void);
+
+void gfx_fill_rect_dma(point16_t p, point16_t size, uint8_t color);
+void gfx_save_rect_dma(point16_t p, point16_t size, uint8_t * ptr);
+void gfx_load_rect_dma(point16_t p, point16_t size, uint8_t * ptr);
+
+/* DMA Handle */
+extern dma_handle_t gfx_dma_handle;
+
+static inline void gfx_wait_dma() {
+	while (DMA_ChannelIsActive(gfx_dma_handle.base, gfx_dma_handle.channel)) {;}
+}
 
 extern struct gfx_font Font24;
 extern struct gfx_font Font20;

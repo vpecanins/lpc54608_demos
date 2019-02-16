@@ -137,10 +137,11 @@ void cursor_ft5406_rtos_init(void) {
 
 }
 
+uint32_t touch_x, touch_y;
+
 void cursor_ft5406_rtos_task(void) {
 	status_t status;
 	touch_event_t touch_event;
-	uint32_t touch_x, touch_y;
 
 	status = I2C_RTOS_Transfer(&master_rtos_handle, &xfer);
 	if (status != kStatus_Success)

@@ -29,10 +29,10 @@
 #define B0 (1 << 0) // For event groups
 #define B1 (1 << 1)
 
-#define BUFFER_LENGTH (1024*2)
+#define BUFFER_LENGTH (1024*4)
 #define DMIC_CHANNEL 1
-#define DMIC_DMA_MAX_XFER 8 // Maximum FFT size is 8*1024
-#define GRAPH_NPOINTS 256
+#define DMIC_DMA_MAX_XFER 32 // Maximum FFT size is 8*1024
+#define GRAPH_NPOINTS 400
 
 extern EventGroupHandle_t event_group;
 
@@ -90,6 +90,9 @@ static char *ylabels[] = {"0 dB", "-10", "-20", "-30", "-40", "-50", "-60", "-70
 static point16_t graph_p[GRAPH_NPOINTS] = {0};
 static uint32_t graph_i[GRAPH_NPOINTS] = {0};
 
+__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
+color_t scratch_buffer[480*272] = {0};
+
 static const struct gfx_graph_desc my_gd = {
 		.xlabels = &xlabels,
 		.pxlabels = {.x = 30, .y= 261},
@@ -97,7 +100,7 @@ static const struct gfx_graph_desc my_gd = {
 		.ylabels = &ylabels,
 		.pylabels = {.x = 3, .y = 8},
 
-		.xdiv = 3,
+		.xdiv = 7,
 		.ydiv = 3,
 
 		.pos = {.x = 30, .y = 5},
@@ -116,6 +119,8 @@ static const struct gfx_graph_desc my_gd = {
  * Code
  ******************************************************************************/
 
+extern uint32_t touch_x, touch_y;
+
 void audio_task(void *pvParameters)
 {
 	vTaskDelay(100);
@@ -123,13 +128,15 @@ void audio_task(void *pvParameters)
 	// Clear all LCD framebuffer to black
 	gfx_fill_rect(POINT16(0, 0), POINT16(480, 272), 0x00);
 
+	gfx_init_dma();
+
 	gfx_graph_init(&my_gd);
 
 	/* DMIC DMA Channel 17 */
 	DMA_EnableChannel(DMA0, DMAREQ_DMIC1);
 	DMA_CreateHandle(&dma_handle, DMA0, DMAREQ_DMIC1);
 	DMA_SetCallback(&dma_handle, DMIC_DMA_Callback, NULL);
-	NVIC_SetPriority(DMA0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY);
+	NVIC_SetPriority(DMA0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 
 	Setup_DMIC_DMA();
 	volatile uint32_t sum = 0;
@@ -168,25 +175,28 @@ void audio_task(void *pvParameters)
 		gfx_fill_rect((point16_t) {x:460,y:5+250-yy}, (point16_t) {x:10,y:yy}, 255);
 
 		int16_t y;
-		uint32_t offset = 0;
 
-		while (offset < 500) {
 
-			for (uint32_t i=0; i<my_gd.npoints; i++) {
-				y = (curr_buffer[my_gd.index[i]+offset]>>4) + my_gd.size.y/2;
-				if (y > my_gd.size.y - 1) my_gd.points[i].y = my_gd.size.y + my_gd.pos.y - 1;
-				else if(y < 0) my_gd.points[i].y = my_gd.pos.y;
-				else my_gd.points[i].y = y + my_gd.pos.y;
-			}
+		// Clear graph area
+		gfx_load_rect_dma(my_gd.pos, my_gd.size, scratch_buffer);
+		//gfx_fill_rect_dma(my_gd.pos, my_gd.size, 0);
 
-			// Clear all LCD framebuffer to black
-			//gfx_fill_rect(my_gd.pos, my_gd.size, 0x00);
-
-			gfx_draw_graph(&my_gd);
-
-			offset += my_gd.npoints;
-
+		for (uint32_t i=0; i<my_gd.npoints; i++) {
+			y = (curr_buffer[my_gd.index[i]]>>4) + my_gd.size.y/2;
+			if (y > my_gd.size.y - 1) my_gd.points[i].y = my_gd.size.y + my_gd.pos.y - 1;
+			else if(y < 0) my_gd.points[i].y = my_gd.pos.y;
+			else my_gd.points[i].y = y + my_gd.pos.y;
 		}
+
+		gfx_wait_dma();
+
+		if (touch_x > my_gd.pos.x && touch_x < my_gd.pos.x + my_gd.size.x &&
+				touch_y > my_gd.pos.y && touch_y < my_gd.pos.y + my_gd.size.y) {
+			gfx_draw_hline(POINT16(my_gd.pos.x, touch_y), my_gd.size.x-1, 68);
+			gfx_draw_vline(POINT16(touch_x, my_gd.pos.y), my_gd.size.y-1, 68);
+		}
+
+		gfx_draw_graph(&my_gd);
 
 		dsp_run_flag = 0;
 	}
@@ -204,7 +214,6 @@ void DMIC_DMA_Callback(dma_handle_t *handle, void *param, bool transferDone, uin
 
 		if (intAB == kDMA_IntA) {
 			curr_buffer = rx_q15_buffer_a;
-
 		} else {
 			curr_buffer = rx_q15_buffer_b;
 		}
@@ -378,6 +387,9 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 		gfx_draw_line_pattern(pa, pb, gd->div_color, 0xF0F0F0F0);
 	}
 
+	gfx_save_rect_dma(gd->pos, gd->size, scratch_buffer);
+	gfx_wait_dma();
+
 	// Icons on top of graph background
 	// No icons for now.
 	//vpm_draw_bmp(VPM_GRAPH_X+VPM_GRAPH_WIDTH-24, VPM_GRAPH_Y, 24, 24, icon_gear);
@@ -385,9 +397,6 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 	//vpm_draw_bmp(VPM_GRAPH_X+VPM_GRAPH_WIDTH-48, VPM_GRAPH_Y, 24, 24, icon_info);
 	//vpm_gfx_dma_wait();
 
-	// Save background to buffer, will be drawn by DMA later.
-	//gfx_copy_bmp(VPM_GRAPH_X, VPM_GRAPH_Y, VPM_GRAPH_WIDTH, VPM_GRAPH_HEIGHT, vpm_background);
-	//gfx_dma_wait();
 
 	// Initialize graph values to zero
 	for (uint32_t i=0; i<gd->npoints; i++) {
@@ -395,6 +404,7 @@ void gfx_graph_init(struct gfx_graph_desc * gd) {
 		gd->index[i] = i*(BUFFER_LENGTH/(gd->npoints*4));
 		gd->points[i].y = gd->pos.y + gd->size.y - 1;
 	}
+
 
 	gfx_draw_graph(gd);
 }

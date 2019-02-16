@@ -240,27 +240,41 @@ __attribute__(( aligned(16) ))
 dma_descriptor_t gfx_dma_xfers[GFX_HEIGHT];
 
 dma_handle_t gfx_dma_handle;
-/*
-void gfx_copy_rect_dma(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t * bmp)
+
+void GFX_DMA_Callback(dma_handle_t *handle, void *param, bool transferDone, uint32_t tcds)
 {
-	dma_transfer_config_t transferConfig0;
+	if (transferDone)
+	{
+		// Unused
+	}
+}
 
-	assert(height >= 0 && height <= GFX_HEIGHT);
-	assert(width >= 0 && width <= GFX_WIDTH);
+void gfx_init_dma(void)
+{
+	/* GFX mem2mem DMA Channel 29 */
+	DMA_EnableChannel(DMA0, 29);
+	DMA_CreateHandle(&gfx_dma_handle, DMA0, 29);
+	DMA_SetCallback(&gfx_dma_handle, GFX_DMA_Callback, NULL);
+}
 
-	uint32_t is_multi = (height>1);
+static void gfx_xfer_dma(point16_t p, point16_t size, uint8_t* p_src, uint8_t* p_dst,  uint8_t src_inc)
+{
+	assert(size.y >= 0 && size.y <= GFX_HEIGHT);
+	assert(size.x >= 0 && size.x <= GFX_WIDTH);
+
+	uint32_t is_multi = (size.y>1);
 
 	// check max
-	assert((width / 4 <= DMA_MAX_TRANSFER_COUNT));
+	assert((size.x / 4 <= DMA_MAX_TRANSFER_COUNT));
 
 	// DMA Transfer configuration (Header)
 	// Will clrtrig, intA and not reload by default,
 	// (Unless is_multi)
 	dma_xfercfg_t xfer_cfg = {
-			.srcInc = 1,
+			.srcInc = src_inc,
 			.dstInc = 1,
-			.transferCount = width,
-			.byteWidth = 4,
+			.transferCount = size.x,
+			.byteWidth = 1,
 			.intA = true,
 			.intB = false,
 			.clrtrig = true,
@@ -269,8 +283,6 @@ void gfx_copy_rect_dma(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 			.valid = true
 	};
 
-	transferConfig0.xfercfg = xfer_cfg;
-
 	// Continue with other segments
 	// The rest (height-1) lines are done using a linked list of DMA transfer descriptors
 	if (is_multi) {
@@ -278,17 +290,14 @@ void gfx_copy_rect_dma(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 		xfer_cfg.clrtrig = false;
 		xfer_cfg.reload = true;
 
-		// Update the header
-		transferConfig0.xfercfg = xfer_cfg;
-
 		// In the middle, (height-2) transfers are done in a for loop
 		uint32_t i;
-		for (i=0; i<height-1; i++) {
+		for (i=0; i<size.y-1; i++) {
 			DMA_CreateDescriptor(
 					&gfx_dma_xfers[i],
 					&xfer_cfg,
-					(uint8_t*)&(bmp[i*width]),
-					(uint8_t*)&(gfx_buffer[y+i][x]),
+					src_inc ? &p_src[p.x + (p.y + i) * GFX_WIDTH] : p_src,
+					&p_dst[p.x + (p.y + i) * GFX_WIDTH],
 					&gfx_dma_xfers[i+1]
 			);
 		}
@@ -301,8 +310,8 @@ void gfx_copy_rect_dma(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 		DMA_CreateDescriptor(
 				&gfx_dma_xfers[i],
 				&xfer_cfg,
-				(uint8_t*)&(bmp[i*width]),
-				(uint8_t*)&(gfx_buffer[y+i][x]),
+				src_inc ? &p_src[p.x + (p.y + i) * GFX_WIDTH] : p_src,
+				&p_dst[p.x + (p.y + i) * GFX_WIDTH],
 				NULL
 		);
 	}
@@ -313,4 +322,24 @@ void gfx_copy_rect_dma(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	// Trigger first DMA transfer
 	DMA_StartTransfer(&gfx_dma_handle);
 }
-*/
+
+void gfx_fill_rect_dma(point16_t p, point16_t size, uint8_t color)
+{
+	static uint8_t fill_color;
+
+	fill_color = color; // To survive after function has finished
+
+	gfx_xfer_dma(p, size, &fill_color, gfx_buffer, 0);
+}
+
+void gfx_save_rect_dma(point16_t p, point16_t size, uint8_t * ptr)
+{
+	gfx_xfer_dma(p, size, gfx_buffer, ptr, 1);
+}
+
+void gfx_load_rect_dma(point16_t p, point16_t size, uint8_t * ptr)
+{
+	gfx_xfer_dma(p, size, ptr, gfx_buffer, 1);
+}
+
+

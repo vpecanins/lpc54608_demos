@@ -66,8 +66,6 @@ static void monitor_task(void *pvParameters);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
-color_t gfx_buffer[480*272] = {0};
 
 __attribute__(( section(".rodata.$BOARD_FLASH"), aligned(4) ))
 uint8_t spifi_test[] = {'h', 'e', 'l', 'l', 'o', 'L', 'P', 'C'};

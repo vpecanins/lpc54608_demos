@@ -1,11 +1,18 @@
 #include "gfx_base.h"
 
-extern color_t gfx_buffer[];
-
 struct gfx_font * gfx_current_font = &Font12; // Selected font
 color_t gfx_fill_color = 0x01;
 color_t gfx_text_color = 0x07;
 color_t gfx_back_color = 0x00;
+
+__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
+color_t video_buffer[GFX_WIDTH*GFX_HEIGHT] = {0};
+
+__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
+color_t gfx_buffer[GFX_WIDTH*GFX_HEIGHT] = {0};
+
+__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
+color_t scratch_buffer[GFX_WIDTH*GFX_HEIGHT] = {0};
 
 void gfx_draw_pixel(point16_t p, uint8_t color)
 {
@@ -13,7 +20,7 @@ void gfx_draw_pixel(point16_t p, uint8_t color)
 }
 
 #define ABS(X)  ((X) > 0 ? (X) : -(X))
-void gfx_draw_line(point16_t p0, point16_t p1, uint8_t color)
+void gfx_draw_line(point16_t p0, point16_t p1, color_t color)
 {
 	point16_t pinc;
 	int16_t deltax = 0, deltay = 0, num = 0, numpixels = 0;
@@ -55,7 +62,7 @@ void gfx_draw_line(point16_t p0, point16_t p1, uint8_t color)
 	}
 }
 
-void gfx_draw_line_pattern(point16_t p0, point16_t p1, uint8_t color, uint32_t pattern)
+void gfx_draw_line_pattern(point16_t p0, point16_t p1, color_t color, uint32_t pattern)
 {
 	point16_t pinc;
 	int16_t deltax = 0, deltay = 0, num = 0, numpixels = 0;
@@ -99,7 +106,7 @@ void gfx_draw_line_pattern(point16_t p0, point16_t p1, uint8_t color, uint32_t p
 	}
 }
 
-void gfx_fill_rect(point16_t p, point16_t size, uint8_t color) {
+void gfx_fill_rect(point16_t p, point16_t size, color_t color) {
 	point16_t pm;
 	for (pm.x=p.x;pm.x<p.x+size.x; pm.x++)
 		for (pm.y=p.y;pm.y<p.y+size.y; pm.y++)
@@ -110,7 +117,7 @@ void gfx_fill_rect(point16_t p, point16_t size, uint8_t color) {
  * Adapted from STM32 example code
  * See font12.c for license
  * */
-void gfx_draw_char(point16_t p, char ch, uint8_t color)
+void gfx_draw_char(point16_t p, char ch, color_t color)
 {
 	uint32_t i = 0, j = 0;
 	uint8_t  offset;
@@ -206,7 +213,7 @@ void gfx_draw_string_at(uint16_t line, uint16_t col, char *ptr, color_t color)
 	  POINT16( col * gfx_current_font->Width, line * gfx_current_font->Height), ptr, color);
 }
 
-void gfx_draw_hline(point16_t p, uint16_t len, uint8_t color)
+void gfx_draw_hline(point16_t p, uint16_t len, color_t color)
 {
 	do {
 		gfx_draw_pixel(p, color);
@@ -214,7 +221,7 @@ void gfx_draw_hline(point16_t p, uint16_t len, uint8_t color)
 	} while (len--);
 }
 
-void gfx_draw_vline(point16_t p, uint16_t len, uint8_t color)
+void gfx_draw_vline(point16_t p, uint16_t len, color_t color)
 {
 	do {
 		gfx_draw_pixel(p, color);
@@ -222,7 +229,7 @@ void gfx_draw_vline(point16_t p, uint16_t len, uint8_t color)
 	} while (len--);
 }
 
-void gfx_draw_rect(point16_t p, point16_t size, uint8_t color)
+void gfx_draw_rect(point16_t p, point16_t size, color_t color)
 {
 	gfx_draw_hline(p, size.x, color);
 	gfx_draw_vline(p, size.y, color);
@@ -230,116 +237,6 @@ void gfx_draw_rect(point16_t p, point16_t size, uint8_t color)
 	gfx_draw_vline(POINT16(p.x + size.x, p.y), size.y, color);
 }
 
-//
-// DMA Routines
-//
 
-#include "fsl_dma.h"
-
-__attribute__(( aligned(16) ))
-dma_descriptor_t gfx_dma_xfers[GFX_HEIGHT];
-
-dma_handle_t gfx_dma_handle;
-
-void GFX_DMA_Callback(dma_handle_t *handle, void *param, bool transferDone, uint32_t tcds)
-{
-	if (transferDone)
-	{
-		// Unused
-	}
-}
-
-void gfx_init_dma(void)
-{
-	/* GFX mem2mem DMA Channel 29 */
-	DMA_EnableChannel(DMA0, 29);
-	DMA_CreateHandle(&gfx_dma_handle, DMA0, 29);
-	DMA_SetCallback(&gfx_dma_handle, GFX_DMA_Callback, NULL);
-}
-
-static void gfx_xfer_dma(point16_t p, point16_t size, uint8_t* p_src, uint8_t* p_dst,  uint8_t src_inc)
-{
-	assert(size.y >= 0 && size.y <= GFX_HEIGHT);
-	assert(size.x >= 0 && size.x <= GFX_WIDTH);
-
-	uint32_t is_multi = (size.y>1);
-
-	// check max
-	assert((size.x / 4 <= DMA_MAX_TRANSFER_COUNT));
-
-	// DMA Transfer configuration (Header)
-	// Will clrtrig, intA and not reload by default,
-	// (Unless is_multi)
-	dma_xfercfg_t xfer_cfg = {
-			.srcInc = src_inc,
-			.dstInc = 1,
-			.transferCount = size.x,
-			.byteWidth = 1,
-			.intA = true,
-			.intB = false,
-			.clrtrig = true,
-			.swtrig = true,
-			.reload = false,
-			.valid = true
-	};
-
-	// Continue with other segments
-	// The rest (height-1) lines are done using a linked list of DMA transfer descriptors
-	if (is_multi) {
-		xfer_cfg.intA = false;
-		xfer_cfg.clrtrig = false;
-		xfer_cfg.reload = true;
-
-		// In the middle, (height-2) transfers are done in a for loop
-		uint32_t i;
-		for (i=0; i<size.y-1; i++) {
-			DMA_CreateDescriptor(
-					&gfx_dma_xfers[i],
-					&xfer_cfg,
-					src_inc ? &p_src[p.x + (p.y + i) * GFX_WIDTH] : p_src,
-					&p_dst[p.x + (p.y + i) * GFX_WIDTH],
-					&gfx_dma_xfers[i+1]
-			);
-		}
-
-		// The last transfer is done outside the for loop
-		xfer_cfg.clrtrig = true;
-		xfer_cfg.reload = false;
-		xfer_cfg.intA = true;
-
-		DMA_CreateDescriptor(
-				&gfx_dma_xfers[i],
-				&xfer_cfg,
-				src_inc ? &p_src[p.x + (p.y + i) * GFX_WIDTH] : p_src,
-				&p_dst[p.x + (p.y + i) * GFX_WIDTH],
-				NULL
-		);
-	}
-
-	// Use this custom function to directly submit the first descriptor
-	DMA_SubmitDescriptor(&gfx_dma_handle, &gfx_dma_xfers[0], false);
-
-	// Trigger first DMA transfer
-	DMA_StartTransfer(&gfx_dma_handle);
-}
-
-void gfx_fill_rect_dma(point16_t p, point16_t size, uint8_t color)
-{
-	static uint8_t fill_color;
-
-	fill_color = color; // To survive after function has finished
-
-	gfx_xfer_dma(p, size, &fill_color, gfx_buffer, 0);
-}
-
-void gfx_save_rect_dma(point16_t p, point16_t size, uint8_t * ptr)
-{
-	gfx_xfer_dma(p, size, gfx_buffer, ptr, 1);
-}
-
-void gfx_load_rect_dma(point16_t p, point16_t size, uint8_t * ptr)
-{
-	gfx_xfer_dma(p, size, ptr, gfx_buffer, 1);
-}
 
 

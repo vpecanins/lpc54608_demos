@@ -18,6 +18,7 @@
 #include "fsl_dmic.h"
 
 #include "gfx_base.h"
+#include "gfx_dma.h"
 
 /*******************************************************************************
  * Definitions
@@ -89,9 +90,6 @@ static char *ylabels[] = {"0 dB", "-10", "-20", "-30", "-40", "-50", "-60", "-70
 
 static point16_t graph_p[GRAPH_NPOINTS] = {0};
 static uint32_t graph_i[GRAPH_NPOINTS] = {0};
-
-__attribute__(( section(".noinit.$BOARD_SDRAM"), aligned(8) ))
-color_t scratch_buffer[480*272] = {0};
 
 static const struct gfx_graph_desc my_gd = {
 		.xlabels = &xlabels,

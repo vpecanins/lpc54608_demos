@@ -150,6 +150,9 @@ static void lv_task(void *pvParameters)
 	lv_port_disp_init();
 	lv_port_indev_init();
 
+	lv_theme_t *th = lv_theme_zen_init(0, NULL);
+	lv_theme_set_current(th);
+
 	lv_obj_t * btn = lv_btn_create(lv_scr_act(), NULL);     /*Add a button the current screen*/
 	lv_obj_set_pos(btn, 10, 10);                            /*Set its position*/
 	lv_obj_set_size(btn, 100, 50);                          /*Set its size*/
@@ -158,37 +161,8 @@ static void lv_task(void *pvParameters)
 	lv_obj_t * label = lv_label_create(btn, NULL);          /*Add a label to the button*/
 	lv_label_set_text(label, "Button");                     /*Set the labels text*/
 
-	/*Create styles for the switch*/
-	static lv_style_t bg_style;
-	static lv_style_t indic_style;
-	static lv_style_t knob_on_style;
-	static lv_style_t knob_off_style;
-	lv_style_copy(&bg_style, &lv_style_pretty);
-	bg_style.body.radius = LV_RADIUS_CIRCLE;
-
-	lv_style_copy(&indic_style, &lv_style_pretty_color);
-	indic_style.body.radius = LV_RADIUS_CIRCLE;
-	indic_style.body.main_color = LV_COLOR_HEX(0x9fc8ef);
-	indic_style.body.grad_color = LV_COLOR_HEX(0x9fc8ef);
-	indic_style.body.padding.hor = 0;
-	indic_style.body.padding.ver = 0;
-
-	lv_style_copy(&knob_off_style, &lv_style_pretty);
-	knob_off_style.body.radius = LV_RADIUS_CIRCLE;
-	knob_off_style.body.shadow.width = 4;
-	knob_off_style.body.shadow.type = LV_SHADOW_BOTTOM;
-
-	lv_style_copy(&knob_on_style, &lv_style_pretty_color);
-	knob_on_style.body.radius = LV_RADIUS_CIRCLE;
-	knob_on_style.body.shadow.width = 4;
-	knob_on_style.body.shadow.type = LV_SHADOW_BOTTOM;
-
 	/*Create a switch and apply the styles*/
 	lv_obj_t *sw1 = lv_sw_create(lv_scr_act(), NULL);
-	lv_sw_set_style(sw1, LV_SW_STYLE_BG, &bg_style);
-	lv_sw_set_style(sw1, LV_SW_STYLE_INDIC, &indic_style);
-	lv_sw_set_style(sw1, LV_SW_STYLE_KNOB_ON, &knob_on_style);
-	lv_sw_set_style(sw1, LV_SW_STYLE_KNOB_OFF, &knob_off_style);
 	lv_obj_align(sw1, NULL, LV_ALIGN_CENTER, 0, -50);
 
 	/*Copy the first switch and turn it ON*/

@@ -40,6 +40,8 @@
 #include "fsl_lcdc.h"
 #include "fsl_spifi.h"
 #include "fsl_ft5406.h"
+#include "fsl_inputmux.h"
+#include "fsl_pint.h"
 
 /*******************************************************************************
  * Definitions
@@ -284,4 +286,32 @@ void BOARD_InitTouchPanel(void)
 	i=0;
 	GPIO_WritePinOutput(GPIO, 2, 27, 1);
 	while (i < 1000U) i++;
+}
+
+extern void pint_intr_callback(pint_pin_int_t pintr, uint32_t pmatch_status);
+
+void BOARD_InitButtons(void)
+{
+	// Touch panel RSTn pin
+	gpio_pin_config_t pin_config = {kGPIO_DigitalInput, 0};
+
+	GPIO_PinInit(GPIO, 1, 1, &pin_config); // SW5 (USER)
+
+	/* Connect trigger sources to PINT */
+	INPUTMUX_Init(INPUTMUX);
+
+	INPUTMUX_AttachSignal(INPUTMUX, kPINT_PinInt0, kINPUTMUX_GpioPort1Pin1ToPintsel);
+
+	/* Turnoff clock to inputmux to save power. Clock is only needed to make changes */
+	INPUTMUX_Deinit(INPUTMUX);
+
+	/* Initialize PINT */
+	PINT_Init(PINT);
+
+	/* Setup Pin Interrupt callbacks on falling edge */
+	PINT_PinInterruptConfig(PINT, kPINT_PinInt0, kPINT_PinIntEnableFallEdge, pint_intr_callback);
+
+	/* Enable callbacks for PINT */
+	PINT_EnableCallback(PINT);
+
 }

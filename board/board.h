@@ -39,6 +39,7 @@
 #include "clock_config.h"
 #include "fsl_common.h"
 #include "fsl_gpio.h"
+#include "fsl_pint.h"
 
 /*******************************************************************************
  * Definitions
@@ -59,6 +60,7 @@ void BOARD_InitSDRAM(void);
 void BOARD_InitLCD(void);
 void BOARD_InitSPIFI(void);
 void BOARD_InitTouchPanel(void);
+void BOARD_InitButtons(void);
 
 #if defined(__cplusplus)
 }

@@ -65,18 +65,19 @@ static void cursor_task(void *pvParameters);
 int main(void)
 {
     /* Init board hardware. */
-
     BOARD_InitPins();
     BOARD_BootClockPLL180M();
-    BOARD_InitSDRAM();
-    BOARD_InitSPIFI();
-    BOARD_InitLCD();
-    BOARD_InitTouchPanel();
 
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 	CLOCK_EnableClock(kCLOCK_Gpio3);
+
+    BOARD_InitSDRAM();
+    BOARD_InitSPIFI();
+    BOARD_InitLCD();
+    BOARD_InitTouchPanel();
+    BOARD_InitButtons();
 
     TEST_SDRAM();
     TEST_SPIFI();
@@ -123,4 +124,9 @@ static void cursor_task(void *pvParameters)
 	TEST_TouchCursor();
 
     vTaskSuspend(NULL);
+}
+
+void pint_intr_callback(pint_pin_int_t pintr, uint32_t pmatch_status)
+{
+    printf("\f\r\nPINT Pin Interrupt %d event detected.", pintr);
 }

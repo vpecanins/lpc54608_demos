@@ -248,6 +248,9 @@
 								<option id="com.crt.advproject.link.gcc.multicore.empty.587672358" name="No Multicore options for this project" superClass="com.crt.advproject.link.gcc.multicore.empty" useByScannerDiscovery="false"/>
 								<option id="com.crt.advproject.link.config.169276866" name="Obsolete (Config)" superClass="com.crt.advproject.link.config" useByScannerDiscovery="false"/>
 								<option id="com.crt.advproject.link.store.1751683466" name="Obsolete (Store)" superClass="com.crt.advproject.link.store" useByScannerDiscovery="false"/>
+								<option id="com.crt.advproject.link.memory.load.image.2025614719" superClass="com.crt.advproject.link.memory.load.image" value="" valueType="string"/>
+								<option id="com.crt.advproject.link.memory.data.633708115" superClass="com.crt.advproject.link.memory.data" value="" valueType="string"/>
+								<option id="com.crt.advproject.link.memory.sections.857616110" superClass="com.crt.advproject.link.memory.sections" valueType="stringList"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1348562628" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -512,6 +515,9 @@
 								<option id="com.crt.advproject.link.gcc.multicore.empty.697621355" name="No Multicore options for this project" superClass="com.crt.advproject.link.gcc.multicore.empty"/>
 								<option id="com.crt.advproject.link.config.1524078919" name="Obsolete (Config)" superClass="com.crt.advproject.link.config"/>
 								<option id="com.crt.advproject.link.store.1151411566" name="Obsolete (Store)" superClass="com.crt.advproject.link.store"/>
+								<option id="com.crt.advproject.link.memory.load.image.603511763" superClass="com.crt.advproject.link.memory.load.image" value="" valueType="string"/>
+								<option id="com.crt.advproject.link.memory.data.1491869935" superClass="com.crt.advproject.link.memory.data" value="" valueType="string"/>
+								<option id="com.crt.advproject.link.memory.sections.313842227" superClass="com.crt.advproject.link.memory.sections" valueType="stringList"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1242322701" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -555,7 +561,7 @@
 	<storageModule moduleId="com.crt.config">
 		<projectStorage>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;TargetConfig&gt;
-&lt;Properties property_3="NXP" property_4="LPC54608J512" property_count="5" version="70200"/&gt;
+&lt;Properties property_3="NXP" property_4="LPC54608J512" property_count="5" version="100200"/&gt;
 &lt;infoList vendor="NXP"&gt;&lt;info chip="LPC54608J512" name="LPC54608J512"&gt;&lt;chip&gt;&lt;name&gt;LPC54608J512&lt;/name&gt;
 &lt;family&gt;LPC546xx&lt;/family&gt;
 &lt;vendor&gt;NXP&lt;/vendor&gt;
@@ -588,7 +594,7 @@
 &lt;peripheralInstance derived_from="FMC" id="FMC" location="0x40034000"/&gt;
 &lt;peripheralInstance derived_from="SMARTCARD0" id="SMARTCARD0" location="0x40036000"/&gt;
 &lt;peripheralInstance derived_from="SMARTCARD0" id="SMARTCARD1" location="0x40037000"/&gt;
-&lt;peripheralInstance derived_from="ASYNC_SYSCON" id="ASYNC_SYSCON" location="0x40040000"/&gt;
+&lt;peripheralInstance derived_from="ASYNC-SYSCON" id="ASYNC-SYSCON" location="0x40040000"/&gt;
 &lt;peripheralInstance derived_from="SPIFI0" id="SPIFI0" location="0x40080000"/&gt;
 &lt;peripheralInstance derived_from="EMC" id="EMC" location="0x40081000"/&gt;
 &lt;peripheralInstance derived_from="DMA0" id="DMA0" location="0x40082000"/&gt;
@@ -639,7 +645,7 @@
 &lt;peripheralInstance derived_from="DMIC0" id="DMIC0" location="0x40090000"/&gt;
 &lt;peripheralInstance derived_from="ENET" id="ENET" location="0x40092000"/&gt;
 &lt;peripheralInstance derived_from="USBHSD" id="USBHSD" location="0x40094000"/&gt;
-&lt;peripheralInstance derived_from="CRC_ENGINE" id="CRC_ENGINE" location="0x40095000"/&gt;
+&lt;peripheralInstance derived_from="CRC-ENGINE" id="CRC-ENGINE" location="0x40095000"/&gt;
 &lt;peripheralInstance derived_from="I2S0" id="I2S0" location="0x40097000"/&gt;
 &lt;peripheralInstance derived_from="I2S0" id="I2S1" location="0x40098000"/&gt;
 &lt;peripheralInstance derived_from="SDIF" id="SDIF" location="0x4009B000"/&gt;

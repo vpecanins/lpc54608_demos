@@ -9,34 +9,6 @@
 #include "pin_mux.h"
 #include "fsl_ft5406.h"
 
-extern uint8_t gfx_buffer[];
-
-/* 16-bit palette format: RGB555
- *
- * 15 14 13 12 11 10  9 8 7 6 5  4 3 2 1 0
- *     B  B  B  B  B  G G G G G  R R R R R
- */
-static const uint16_t rgb555(const uint8_t r,const uint8_t g,const uint8_t b) {
-	return (b << 10) | (g << 5) | (r & 0x1F);
-}
-
-void lcd_test_pattern()
-{
-	LCD->PAL[0] = rgb555(0,0,0) | (rgb555(31,0,0) << 16);
-	LCD->PAL[1] = rgb555(0,31,0) | (rgb555(0,0,31) << 16);
-	LCD->PAL[2] = rgb555(31,31,0) | (rgb555(31,0,31) << 16);
-	LCD->PAL[3] = rgb555(0,31,31) | (rgb555(31,31,31) << 16);
-
-	LCD->PAL[4] = rgb555(15,15,15) | (rgb555(15,0,0) << 16);
-	LCD->PAL[5] = rgb555(0,15,0) | (rgb555(0,0,15) << 16);
-	LCD->PAL[6] = rgb555(15,15,0) | (rgb555(15,0,15) << 16);
-	LCD->PAL[7] = rgb555(0,15,15) | (rgb555(23,23,23) << 16);
-
-	for (uint32_t j = 0; j<272; j++)
-		for (uint32_t i = 0; i<240; i++)
-			gfx_buffer[i+240*j] = (i/(240/16)) * 0x11; // two pixels
-}
-
 status_t SDRAM_DataBusCheck(volatile uint32_t *address)
 {
 	uint32_t data = 0;
@@ -147,15 +119,14 @@ void TEST_SDRAM(void)
 	}
 }
 
-void TEST_LCD(void)
-{
-	lcd_test_pattern();
-}
-
 void TEST_SPIFI(void)
 {
 
 }
+
+uint32_t touch_pressed=0;
+uint32_t touch_x=0;
+uint32_t touch_y=0;
 
 void TEST_TouchCursor(void)
 {
@@ -174,6 +145,11 @@ void TEST_TouchCursor(void)
 			if (touch_count >= 1) {
 				i = touch_count-1;
 				LCDC_SetCursorPosition(LCD, touch_array[i].x, touch_array[i].y);
+				touch_pressed = 1;
+				touch_x=touch_array[i].x;
+				touch_y=touch_array[i].y;
+			} else {
+				touch_pressed=0;
 			}
 		} else {
 			FT5406_Init(&touch_handle, ((I2C_Type *) (I2C2_BASE)));
